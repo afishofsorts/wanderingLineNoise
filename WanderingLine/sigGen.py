@@ -1,4 +1,5 @@
 import numpy as np
+from numpy import random
 import freqGen as fg
 from scipy.interpolate import splrep, BSpline
 import matplotlib.pyplot as plt
