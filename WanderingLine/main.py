@@ -2,12 +2,17 @@ import sigGen as sg
 import freqGen as fg
 import sigAnalysis as sa
 
-f0 = 60; band = 30; A = 2; M = 30
-signal = sg.genSignal(f0, band, A, M)
+f0 = 60 # constant pivot frequency
+band = 30 # range of variation above and below f0
+A = 2 # amplitude of signal
+M = 30
+res = 1000 
 
-sa.plotAll(signal)
+signal = sg.genSignal(f0, band, A, res, M) # generates signal with smoothly varying frequency and iid noise
+times = signal[0]; distSig = signal[1]; cleanSig = signal[2]; freqKnots = signal[3]; freqs = signal[4]
 
-# fg.plotSpline(signal[3], signal[4]) # plots the frequency over time
-# sa.plotFFT(signal[0], signal[2]) # plots FFT of entire iid data set
-# sa.plotSpectrogram(signal) # plots spectrogram for short FFTs of iid data
-
+sa.plotAllTime(signal)
+sa.plotFFT(times, cleanSig) # plots FFT of entire clean data set
+sa.plotPSD(times, cleanSig)
+sa.plotSpectrogram(times, distSig, res)
+fg.plotSpline(times, freqs, freqKnots)
