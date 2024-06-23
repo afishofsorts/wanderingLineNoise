@@ -6,11 +6,11 @@ import matplotlib.pyplot as plt
 
 # converts frequency to phase using rectangle approximation
 def freqToPhase(freq):
-    tgap = freq[0][1] - freq[0][0] # assumes uniform spacings of frequency
+    Ts = freq[0][1] - freq[0][0] # assumes uniform spacings of frequency
     phase = np.zeros(shape=(len(freq[0])))
     phase[0] = 0
     for i in range(len(freq[0])-1):
-        phase[i+1] = phase[i] + tgap*freq[1][i+1]
+        phase[i+1] = phase[i] + Ts*freq[1][i+1]
 
     return phase
 
@@ -24,9 +24,9 @@ def addVar(data, stnd: float):
     return newdata
 
 # generates a signal of amplitude A with iid noise and smooth frequency variation between M frequencies within the range f0 +- band
-def genSignal(f0: float, band: float, A: float, res, M = 30, drange = 0.4):
+def genSignal(f0: float, band: float, A: float, Ts, M = 30, drange = 0.4):
     freqKnots = fg.genKnot(M, f0, band) # knots for freq spline
-    spline = fg.genBSpline(freqKnots, res) # freq spline
+    spline = fg.genBSpline(freqKnots, Ts) # freq spline
     times = spline[0]; freqs = spline[1]
 
     phase = freqToPhase(spline)
