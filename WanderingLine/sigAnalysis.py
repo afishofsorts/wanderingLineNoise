@@ -8,11 +8,13 @@ def plotFFT(x, y, Ts, filename='FFTPlot'):
     N = len(x)
     yf = fft(y)
     xf = fftfreq(N, Ts)[:N//2]
-    plt.plot(xf, 2.0/N * np.abs(yf[0:N//2]), '-')
+    yg = 2.0/N * np.abs(yf[0:N//2])
+    plt.plot(xf, yg, '-')
     plt.xlabel('frequency (Hz)'); plt.ylabel('FFT')
     plt.grid()
     plt.savefig(r'C:\Users\casey\Desktop\REU24\WanderingLine\SignalPlots\\' + filename + '.png')
     plt.show()
+    return xf, yg
 
 def plotSpectrogram(times, data, Ts, fmax, filename='SpectrogramPlot'):
     N = len(data); flim = int(1.5*fmax)
@@ -39,19 +41,19 @@ def plotSpectrogram(times, data, Ts, fmax, filename='SpectrogramPlot'):
     plt.savefig(r'C:\Users\casey\Desktop\REU24\WanderingLine\SignalPlots\\' + filename + '.png')
     plt.show()
 
-def plotAllTime(signal, Ts, fmax, filename='TimePlots'):
+def plotAllTime(times, distSig, cleanSig, freqKnots, freqs, Ts, fmax, filename='TimePlots'):
     plt.figure(figsize=(15, 10))
     plot1 = plt.subplot2grid((4, 1), (0, 0)) 
     plot2 = plt.subplot2grid((4, 1), (1, 0))
     plot3 = plt.subplot2grid((4, 1), (2, 0)) 
     plot4 = plt.subplot2grid((4, 1), (3, 0)) 
 
-    N = len(signal[0]); flim = int(1.5*fmax)
+    N = len(times); flim = int(1.5*fmax)
 
     g_std = 8  # standard deviation for Gaussian window in samples
     w = gaussian(50, std=g_std, sym=True)  # symmetric Gaussian window
     SFT = ShortTimeFFT(w, hop=10, fs=1/Ts, mfft=200, scale_to='psd')
-    Sx = SFT.stft(signal[1])  # perform the STFT
+    Sx = SFT.stft(distSig)  # perform the STFT
 
     t_lo, t_hi = SFT.extent(N)[:2]  # time range of plot
     plot4.set_title(rf"Short FFTs of iid Signal in Spectrogram")
@@ -62,22 +64,22 @@ def plotAllTime(signal, Ts, fmax, filename='TimePlots'):
     im1 = plot4.imshow(abs(Sx), origin='lower', aspect='auto',
                     extent=SFT.extent(N), cmap='viridis')
 
-    plot1.plot(signal[0], signal[4], color='hotpink') 
-    plot1.plot(signal[3][:, 0], signal[3][:, 1], 'o', color = 'pink')
+    plot1.plot(times, freqs, color='hotpink') 
+    plot1.plot(freqKnots[:, 0], freqKnots[:, 1], 'o', color = 'pink')
     plot1.set(ylabel='freq (Hz)', xlim=(t_lo, t_hi), ylim=(0, flim), title='Frequency(Hz)')
 
-    plot2.plot(signal[0], signal[2], '-', color='g') 
+    plot2.plot(times, cleanSig, '-', color='g') 
     # axis values are for some reason floats, need to make adaptable
     plot2.set(ylabel='q(t)', xlim=(t_lo, t_hi), title='Clean Signal') 
 
-    plot3.plot(signal[0], signal[1], 'o', color='g') 
+    plot3.plot(times, distSig, 'o', color='g') 
     plot3.set(ylabel='q(t)', xlim=(t_lo, t_hi), title='Dist. Signal') 
     
     plt.tight_layout()
     plt.savefig(r'C:\Users\casey\Desktop\REU24\WanderingLine\SignalPlots\\' + filename + '.png')
     plt.show() 
 
-def plotPSD(data, Ts, filename='PSDLinPlot'):
+def plotPSD(data, Ts, filename='PSDPlot'):
     plt.figure()
     plot1 = plt.subplot2grid((2, 1), (0, 0)) 
     plot2 = plt.subplot2grid((2, 1), (1, 0))
@@ -91,7 +93,7 @@ def plotPSD(data, Ts, filename='PSDLinPlot'):
     plt.savefig(r'C:\Users\casey\Desktop\REU24\WanderingLine\SignalPlots\\' + filename + '.png')
     plt.show()
 
-def plotSpectComp(times, Sdata, spline, Ts, fmax, filename='SpectCompPlot'):
+def plotSpectComp(times, Sdata, spline, Ts, fmax, title, filename='SpectCompPlot'):
     N = len(Sdata); flim = int(1.5*fmax)
 
     g_std = 8  # standard deviation for Gaussian window in samples
@@ -101,7 +103,7 @@ def plotSpectComp(times, Sdata, spline, Ts, fmax, filename='SpectCompPlot'):
 
     fig1, ax1 = plt.subplots(figsize=(10., 6.))
     t_lo, t_hi = SFT.extent(N)[:2]  # time range of plot
-    ax1.set_title('Spectrogram of iid Signal and Original Frequency Spline')
+    ax1.set_title(title)
     ax1.set(xlabel=f"Time (s)",
             ylabel=f"Freq. (Hz)",
             xlim=(t_lo, t_hi), ylim=(0, flim))

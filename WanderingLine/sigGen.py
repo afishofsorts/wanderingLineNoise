@@ -3,14 +3,14 @@ import random as rand
 import freqGen as fg
 from scipy.interpolate import splrep, BSpline
 import matplotlib.pyplot as plt
+import pandas as pd
 
 # converts frequency to phase using rectangle approximation
-def freqToPhase(freq):
-    Ts = freq[0][1] - freq[0][0] # assumes uniform spacings of frequency
-    phase = np.zeros(shape=(len(freq[0])))
+def freqToPhase(times, freqs, Ts):
+    phase = np.zeros(shape=(len(times)))
     phase[0] = 0
-    for i in range(len(freq[0])-1):
-        phase[i+1] = phase[i] + Ts*freq[1][i+1]
+    for i in range(len(times)-1):
+        phase[i+1] = phase[i] + Ts*freqs[i+1]
 
     return phase
 
@@ -26,14 +26,31 @@ def addVar(data, stnd: float):
 # generates a signal of amplitude A with iid noise and smooth frequency variation between M frequencies within the range f0 +- band
 def genSignal(f0: float, band: float, A: float, Ts, M = 30, drange = 0.4):
     freqKnots = fg.genKnot(M, f0, band) # knots for freq spline
-    spline = fg.genBSpline(freqKnots, Ts) # freq spline
-    times = spline[0]; freqs = spline[1]
+    times, freqs = fg.genBSpline(freqKnots, Ts) # freq spline
 
-    phase = freqToPhase(spline)
+    phase = freqToPhase(times, freqs, Ts)
 
     cleanSig = A*np.cos(phase*2*np.pi) # creates sinusoidal signal
     distSig = addVar(cleanSig, drange*A) # add iid noise
     return [times, distSig, cleanSig, freqKnots, freqs]
+
+def genStepSig(f0: float, band: float, A: float, Ts, M = 30, drange = 0.4):
+    times, freqs = fg.genStepFreq(M, f0, band, Ts)
+
+    phase = freqToPhase(times, freqs, Ts)
+
+    cleanSig = A*np.cos(phase*2*np.pi) # creates sinusoidal signal
+    distSig = addVar(cleanSig, drange*A) # add iid noise
+    return [times, distSig, cleanSig, freqs]
+
+def genPeriodicSig(f0: float, band: float, A: float, Ts, M = 30, drange = 0.4):
+    times, freqs = fg.genPeriodicFreq(M, f0, Ts)
+
+    phase = freqToPhase(times, freqs, Ts)
+
+    cleanSig = A*np.cos(phase*2*np.pi) # creates sinusoidal signal
+    distSig = addVar(cleanSig, drange*A) # add iid noise
+    return [times, distSig, cleanSig, freqs]
 
 def plotScatter(x, y, w=15, h=5, filename='ScatterPlot'):
     fig = plt.figure(figsize=(w, h))

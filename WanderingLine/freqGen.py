@@ -20,7 +20,7 @@ def genBSpline(knots, Ts):
     
     xnew = np.arange(0, knots[-1, 0], Ts)
     smoothFit = BSpline(*tck)(xnew) # wraps tck into BSpline to generate fit
-    return [xnew, smoothFit]
+    return xnew, smoothFit
 
 def plotSpline(times, spline, knots, filename = 'FreqSpline'):
     plt.plot(knots[:, 0], knots[:, 1], 'o', color='pink')
@@ -28,4 +28,23 @@ def plotSpline(times, spline, knots, filename = 'FreqSpline'):
     plt.xlabel('t (s)'); plt.ylabel('freq (Hz)')
     plt.savefig(r'C:\Users\casey\Desktop\REU24\WanderingLine\SignalPlots\\' + filename + '.png')
     plt.show()
+
+def genStepFreq(M, f0, band, Ts, n=10):
+    times = np.arange(0, M*n/f0, Ts)
+    fstep = 0; tstep = len(times)//4
+    freqs = np.zeros(len(times))
+    for i in range(len(times)):
+        if i%tstep==0:
+            fstep = fstep + band
+        freqs[i] = f0 - band + fstep
+
+    return times, freqs
+
+def genPeriodicFreq(M, f0, Ts, n=10):
+    times = np.arange(0, M*n/f0, Ts)
+    f1 = 0.1*f0
+
+    freqs = f0 + f1*np.cos(2*np.pi*f1*times)
+
+    return times, freqs
 
