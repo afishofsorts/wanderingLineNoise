@@ -1,6 +1,6 @@
 import numpy as np
 import random as rand
-from DummySignal import freqGen as fg
+from . import freqGen as fg
 from scipy.interpolate import splrep, BSpline
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -61,7 +61,7 @@ def plotScatter(x, y, w=15, h=5, filename='ScatterPlot'):
     fig = plt.figure(figsize=(w, h))
     plt.plot(x, y, 'o')
     plt.xlabel('t (s)'); plt.ylabel('q(t)')
-    plt.savefig(r'C:\Users\casey\Desktop\REU24\WanderingLine\SignalPlots\\' + filename + '.png')
+    plt.savefig('.\\SavedFiles\\SignalPlots\\' + filename + '.png')
     plt.show()
 
 # basic line plot
@@ -69,5 +69,5 @@ def plotLine(x, y, w=15, h=5, filename='LinePlot'):
     fig = plt.figure(figsize=(w, h))
     plt.plot(x, y, '-')
     plt.xlabel('t (s)'); plt.ylabel('q(t)')
-    plt.savefig(r'C:\Users\casey\Desktop\REU24\WanderingLine\SignalPlots\\' + filename + '.png')
+    plt.savefig('.\\SavedFiles\\SignalPlots\\' + filename + '.png')
     plt.show()
