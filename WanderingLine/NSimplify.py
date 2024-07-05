@@ -38,7 +38,7 @@ for j in range(3):
     plt.legend(['w1', 'w2', 'w3'])
     plt.xlabel('Omega'); plt.ylabel('Cosine Squared')
     filename = 'NvsOmega'
-    plt.savefig('SavedFiles\\MiscTests\\' + filename + str(tstep) + '.png')
+    plt.savefig('WanderingLine\\SavedFiles\\MiscTests\\' + filename + str(tstep) + '.png')
     plt.show()
 
     colors = ['blue', 'orange', 'green']
@@ -46,7 +46,7 @@ for j in range(3):
     plt.legend(['w1', 'w2', 'w3'])
     plt.title('Cosine Squared Histogram w/ Omega Variation (tstep=' + str(tstep) + ')')
     filename = 'NHist'
-    plt.savefig('SavedFiles\\MiscTests\\' + filename + str(tstep) + '.png')
+    plt.savefig('WanderingLine\\SavedFiles\\MiscTests\\' + filename + str(tstep) + '.png')
     plt.show()
 
 

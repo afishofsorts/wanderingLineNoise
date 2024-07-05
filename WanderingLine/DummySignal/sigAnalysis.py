@@ -21,7 +21,7 @@ def plotFFT(x, y, Ts, filename='FFTPlot'):
     plt.plot(xf, yg, '-')
     plt.xlabel('frequency (Hz)'); plt.ylabel('FFT')
     plt.grid()
-    plt.savefig(r'C:\Users\casey\Desktop\REU24\WanderingLine\SavedFiles\SignalPlots\\' + filename + '.png')
+    plt.savefig('.\\WanderingLine\\SavedFiles\\SignalPlots\\' + filename + '.png')
     plt.show()
     return xf, yg
 
@@ -48,7 +48,7 @@ def plotSpectrogram(times, data, Ts, fmax, filename='SpectrogramPlot'):
                     extent=SFT.extent(N), cmap='viridis')
     fig1.colorbar(im1, label="PSD")
     fig1.tight_layout()
-    plt.savefig(r'C:\Users\casey\Desktop\REU24\WanderingLine\SavedFiles\SignalPlots\\' + filename + '.png')
+    plt.savefig('.\\WanderingLine\\SavedFiles\\SignalPlots\\' + filename + '.png')
     plt.show()
 
 def plotAllTime(times, distSig, cleanSig, freqKnots, freqs, Ts, fmax, filename='TimePlots'):
@@ -74,8 +74,8 @@ def plotAllTime(times, distSig, cleanSig, freqKnots, freqs, Ts, fmax, filename='
     im1 = plot4.imshow(abs(Sx), origin='lower', aspect='auto',
                     extent=SFT.extent(N), cmap='viridis')
 
-    plot1.plot(times, freqs, color='hotpink') 
-    plot1.plot(freqKnots[:, 0], freqKnots[:, 1], 'o', color = 'pink')
+    plot1.plot(times, freqs, color='hotpink')
+    plot1.plot(freqKnots[0], freqKnots[1], 'o', color = 'pink')
     plot1.set(ylabel='freq (Hz)', xlim=(t_lo, t_hi), ylim=(0, flim), title='Frequency(Hz)')
 
     plot2.plot(times, cleanSig, '-', color='g') 
@@ -86,7 +86,7 @@ def plotAllTime(times, distSig, cleanSig, freqKnots, freqs, Ts, fmax, filename='
     plot3.set(ylabel='q(t)', xlim=(t_lo, t_hi), title='Dist. Signal') 
     
     plt.tight_layout()
-    plt.savefig(r'C:\Users\casey\Desktop\REU24\WanderingLine\SavedFiles\SignalPlots\\' + filename + '.png')
+    plt.savefig('.\\WanderingLine\\SavedFiles\\SignalPlots\\' + filename + '.png')
     plt.show() 
 
 def plotPSD(data, Ts, filename='PSDPlot'):
@@ -100,7 +100,7 @@ def plotPSD(data, Ts, filename='PSDPlot'):
     plot2.set_title('Linear Plot'); plot2.set_xlabel('Freq. (Hz)')
     
     plt.tight_layout()
-    plt.savefig(r'C:\Users\casey\Desktop\REU24\WanderingLine\SavedFiles\SignalPlots\\' + filename + '.png')
+    plt.savefig('.\\WanderingLine\\SavedFiles\\SignalPlots\\' + filename + '.png')
     plt.show()
 
 def plotSpectComp(times, Sdata, spline, Ts, fmax, title, filename='SpectCompPlot'):
@@ -124,5 +124,5 @@ def plotSpectComp(times, Sdata, spline, Ts, fmax, title, filename='SpectCompPlot
     ax1.plot(times, spline, '--', color='r')
     plt.legend(['Frequency Spline'], loc='upper left')
     fig1.tight_layout()
-    plt.savefig(r'C:\Users\casey\Desktop\REU24\WanderingLine\SavedFiles\SignalPlots\\' + filename + '.png')
+    plt.savefig('.\\WanderingLine\\SavedFiles\\SignalPlots\\' + filename + '.png')
     plt.show()

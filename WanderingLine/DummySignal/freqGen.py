@@ -49,7 +49,7 @@ def plotSpline(t, spline, knots, filename = 'FreqSpline'):
     plt.plot(knots[:, 0], knots[:, 1], 'o', color='pink')
     plt.plot(t, spline, '-', color='hotpink')
     plt.xlabel('t (s)'); plt.ylabel('freq (Hz)')
-    plt.savefig('.\\SavedFiles\\SignalPlots\\' + filename + '.png')
+    plt.savefig('.\\WanderingLine\\SavedFiles\\SignalPlots\\' + filename + '.png')
     plt.show()
 
 # generates frequency step function with at least n periods per step

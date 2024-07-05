@@ -9,18 +9,20 @@ A = 2 # amplitude of signal
 M = 5 # number of breakpoints
 Ts = 1/(10*fmax) # sampling rate
 
-freqKnots = fg.genKnot(M, f0, band) # knots for freq spline
-t, freqs = fg.genBSpline(freqKnots, Ts) # generates time and freq spline arrays
+def genWL():
+    freqKnots = fg.genKnot(M, f0, band) # knots for freq spline
+    t, freqs = fg.genBSpline(freqKnots, Ts) # generates time and freq spline arrays
 
-cleanSig, distSig = sg.genSignal(t, freqs, A, Ts) # generates signal with smoothly varying frequency and iid noise
+    cleanSig, distSig = sg.genSignal(t, freqs, A, Ts) # generates signal with smoothly varying frequency and iid noise
 
-dir = 'SavedFiles\\DataStore\\Dummy_WL.npy'
-np.save(dir, [t, cleanSig])
+    return t, cleanSig, distSig, freqs, freqKnots
 
 # sa.plotAllTime(t, distSig, cleanSig, freqKnots, freqs, Ts, fmax)
 
+t, cleanSig, distSig, freqs, freqKnots = genWL()
+
 osc = t[-1]*f0 # median number of oscillations
 
-lbounds = [-40, -30, -30]; ubounds = [40, 30, 30] # w2 and w3 bounds are arbitrary right now
-model= pbf.PSOSegmenter(dir, 1, lbounds, ubounds) 
+lbounds = [-40, -5, -5]; ubounds = [40, 5, 5] # w2 and w3 bounds are arbitrary right now
+model= pbf.PSOSegmenter(t, cleanSig, dir, 1, lbounds, ubounds) 
 sa.plotSpectComp(t, model, freqs, Ts, fmax, 'PSO iid Fit Spectrogram and Clean Input Frequency Spline')

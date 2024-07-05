@@ -11,7 +11,7 @@ t, freqs = fg.genStepFreq(N, fmin, fmax, Ts) # generates time and frequency arra
 cleanSig, distSig = sg.genSignal(t, freqs, A, Ts) # generates frequency step function 
 
 filename = 'Dummy_Step'
-dir = 'SavedFiles\\DataStore\\' + filename + '.npy'
+dir = 'WanderingLine\\SavedFiles\\DataStore\\' + filename + '.npy'
 np.save(dir, [t, distSig])
 
 sa.plotFFT(t, cleanSig, Ts, 'FFT_Step')

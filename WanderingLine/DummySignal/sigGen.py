@@ -61,7 +61,7 @@ def plotScatter(x, y, w=15, h=5, filename='ScatterPlot'):
     fig = plt.figure(figsize=(w, h))
     plt.plot(x, y, 'o')
     plt.xlabel('t (s)'); plt.ylabel('q(t)')
-    plt.savefig('.\\SavedFiles\\SignalPlots\\' + filename + '.png')
+    plt.savefig('.\\WanderingLine\\SavedFiles\\SignalPlots\\' + filename + '.png')
     plt.show()
 
 # basic line plot
@@ -69,5 +69,5 @@ def plotLine(x, y, w=15, h=5, filename='LinePlot'):
     fig = plt.figure(figsize=(w, h))
     plt.plot(x, y, '-')
     plt.xlabel('t (s)'); plt.ylabel('q(t)')
-    plt.savefig('.\\SavedFiles\\SignalPlots\\' + filename + '.png')
+    plt.savefig('.\\WanderingLine\\SavedFiles\\SignalPlots\\' + filename + '.png')
     plt.show()

@@ -13,7 +13,7 @@ cleanSig, distSig = sg.genSignal(t, freqs, A, Ts) # generates periodically varyi
 xf, yg = sa.plotFFT(t, cleanSig, Ts, 'FFT_Periodic') # performs FFT
 
 filename = 'Dummy_Periodic'
-dir = 'SavedFiles\\DataStore\\' + filename + '.npy'
+dir = 'WanderingLine\\SavedFiles\\DataStore\\' + filename + '.npy'
 np.save(dir, [t, distSig])
 
 peaks = []; thresh = 0.001 # peaks initialization and threshold for detecting peaks
