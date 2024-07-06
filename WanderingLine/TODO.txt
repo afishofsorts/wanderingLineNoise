@@ -1,0 +1,5 @@
+Remove time arrays, redundant if every function creates it's own based on Ts
+
+Remove data storage
+
+Make yaxes of plotAllTime consistent

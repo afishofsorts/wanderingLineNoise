@@ -25,8 +25,15 @@ def plotFFT(x, y, Ts, filename='FFTPlot'):
     plt.show()
     return xf, yg
 
-# plots spectrogram of 
-def plotSpectrogram(times, data, Ts, fmax, filename='SpectrogramPlot'):
+# plots spectrogram of input data using short FFT
+def plotSpectrogram(t, data, Ts, fmax, filename='SpectrogramPlot'):
+    # INPUTS:
+    # t:         1D time array with Ts spacing
+    # data:      1D array
+    # Ts:        Sampling rate
+    # fmax:      Maximum frequency in data
+    # filename:  String of saved plot image
+
     N = len(data); flim = int(1.5*fmax)
 
     g_std = 8  # standard deviation for Gaussian window in samples
@@ -51,50 +58,66 @@ def plotSpectrogram(times, data, Ts, fmax, filename='SpectrogramPlot'):
     plt.savefig('.\\WanderingLine\\SavedFiles\\SignalPlots\\' + filename + '.png')
     plt.show()
 
-def plotAllTime(times, distSig, cleanSig, freqKnots, freqs, Ts, fmax, filename='TimePlots'):
-    plt.figure(figsize=(15, 10))
+# plots frequency, resulting sin wave, iid sin wave, and spectrogram of iid against time
+def plotAllTime(t, cleanSig, distSig, freqs, freqKnots, Ts, fmax, filename='TimePlots'):
+    # INPUTS:
+    # t:         1D time array with Ts spacing
+    # cleanSig:  1D array of clean signal
+    # distSig:   1D array of cleanSig with added iid
+    # freqs:     1D frequency array
+    # freqKnots: 2-tuple of time and frequency values used for BSpline generation  
+    # Ts:        Sampling rate
+    # fmax:      Maximum frequency in data
+    # filename:  String of saved plot image
+
+    plt.figure(figsize=(15, 10)) # plot setup and structure
     plot1 = plt.subplot2grid((4, 1), (0, 0)) 
     plot2 = plt.subplot2grid((4, 1), (1, 0))
     plot3 = plt.subplot2grid((4, 1), (2, 0)) 
     plot4 = plt.subplot2grid((4, 1), (3, 0)) 
 
-    N = len(times); flim = int(1.5*fmax)
+    flim = int(1.5*fmax) # increased ceiling for fmax due to iid
 
-    g_std = 8  # standard deviation for Gaussian window in samples
+    # Spectrogram plot
+    N = len(t); g_std = 8  # standard deviation for Gaussian window in samples
     w = gaussian(50, std=g_std, sym=True)  # symmetric Gaussian window
     SFT = ShortTimeFFT(w, hop=10, fs=1/Ts, mfft=200, scale_to='psd')
     Sx = SFT.stft(distSig)  # perform the STFT
 
     t_lo, t_hi = SFT.extent(N)[:2]  # time range of plot
     plot4.set_title(rf"Short FFTs of iid Signal in Spectrogram")
-    plot4.set(xlabel=f"t (s)",
-            ylabel=f"freq. (Hz)",
-            xlim=(t_lo, t_hi), ylim=(0, flim))
+    plot4.set(xlabel=f"t (s)", ylabel=f"freq. (Hz)", xlim=(t_lo, t_hi), ylim=(0, flim))
+    im1 = plot4.imshow(abs(Sx), origin='lower', aspect='auto', extent=SFT.extent(N), cmap='viridis') # heat mapping
 
-    im1 = plot4.imshow(abs(Sx), origin='lower', aspect='auto',
-                    extent=SFT.extent(N), cmap='viridis')
-
-    plot1.plot(times, freqs, color='hotpink')
+    # Frequency plot
+    plot1.plot(t, freqs, color='hotpink')
     plot1.plot(freqKnots[0], freqKnots[1], 'o', color = 'pink')
     plot1.set(ylabel='freq (Hz)', xlim=(t_lo, t_hi), ylim=(0, flim), title='Frequency(Hz)')
 
-    plot2.plot(times, cleanSig, '-', color='g') 
-    # axis values are for some reason floats, need to make adaptable
+    # Clean signal plot
+    plot2.plot(t, cleanSig, '-', color='g') 
     plot2.set(ylabel='q(t)', xlim=(t_lo, t_hi), title='Clean Signal') 
 
-    plot3.plot(times, distSig, 'o', color='g') 
+    # iid signal plot
+    plot3.plot(t, distSig, 'o', color='g') 
     plot3.set(ylabel='q(t)', xlim=(t_lo, t_hi), title='Dist. Signal') 
     
     plt.tight_layout()
     plt.savefig('.\\WanderingLine\\SavedFiles\\SignalPlots\\' + filename + '.png')
     plt.show() 
 
+# Plots Power Spectral Density of input data with logarithmic and linear plotting
 def plotPSD(data, Ts, filename='PSDPlot'):
-    plt.figure()
+    # INPUTS:
+    # data:      1D array
+    # Ts:        Sampling rate
+    # filename:  String of saved plot image
+
+    plt.figure() # plot setup and structure
     plot1 = plt.subplot2grid((2, 1), (0, 0)) 
     plot2 = plt.subplot2grid((2, 1), (1, 0))
 
-    power, freqs = plot1.psd(data, 512, 1 / Ts, scale_by_freq=False)
+    power, freqs = plot1.psd(data, 512, 1 / Ts, scale_by_freq=False) # performs psd
     plot1.set_title('Logarithmic Plot'); plot1.set_xlabel('')
     plot2.plot(freqs, power); plot2.set_ylabel('Power')
     plot2.set_title('Linear Plot'); plot2.set_xlabel('Freq. (Hz)')
@@ -103,25 +126,34 @@ def plotPSD(data, Ts, filename='PSDPlot'):
     plt.savefig('.\\WanderingLine\\SavedFiles\\SignalPlots\\' + filename + '.png')
     plt.show()
 
-def plotSpectComp(times, Sdata, spline, Ts, fmax, title, filename='SpectCompPlot'):
-    N = len(Sdata); flim = int(1.5*fmax)
+# Plots input frequency signal over spectrogram of some data using short FFT 
+def plotSpectComp(t, SpecData, freqs, Ts, fmax, title, filename='SpectCompPlot'):
+    # INPUTS:
+    # t:         1D time array with Ts spacing
+    # SpectComp: 1D array of data for spectroscopy
+    # freqs:     1D frequency array
+    # Ts:        Sampling rate
+    # fmax:      Maximum frequency in data
+    # title:     Header for plot
+    # filename:  String of saved plot image
+
+    fig1, ax1 = plt.subplots(figsize=(10., 6.)) # plot setup and structure
+
+    N = len(SpecData); flim = int(1.5*fmax)
 
     g_std = 8  # standard deviation for Gaussian window in samples
     w = gaussian(50, std=g_std, sym=True)  # symmetric Gaussian window
     SFT = ShortTimeFFT(w, hop=10, fs=1/Ts, mfft=200, scale_to='psd')
-    Sx = SFT.stft(Sdata)  # perform the STFT
+    Sx = SFT.stft(SpecData)  # perform the STFT
 
-    fig1, ax1 = plt.subplots(figsize=(10., 6.))
     t_lo, t_hi = SFT.extent(N)[:2]  # time range of plot
     ax1.set_title(title)
-    ax1.set(xlabel=f"Time (s)",
-            ylabel=f"Freq. (Hz)",
-            xlim=(t_lo, t_hi), ylim=(0, flim))
+    ax1.set(xlabel=f"Time (s)", ylabel=f"Freq. (Hz)", xlim=(t_lo, t_hi), ylim=(0, flim))
 
-    im1 = ax1.imshow(abs(Sx), origin='lower', aspect='auto',
-                    extent=SFT.extent(N), cmap='viridis')
+    im1 = ax1.imshow(abs(Sx), origin='lower', aspect='auto', extent=SFT.extent(N), cmap='viridis') # heat mapping
     fig1.colorbar(im1, label="PSD")
-    ax1.plot(times, spline, '--', color='r')
+
+    ax1.plot(t, freqs, '--', color='r') # adds input frequency
     plt.legend(['Frequency Spline'], loc='upper left')
     fig1.tight_layout()
     plt.savefig('.\\WanderingLine\\SavedFiles\\SignalPlots\\' + filename + '.png')
