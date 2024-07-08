@@ -13,19 +13,18 @@ def polyCos(t, p0, w1, w2, w3):
 
     return np.cos(w1*t + w2*t**2 + w3*t**3 + p0)
 
-# least squares for input data and polyCos model
-def leastSquaresFit(omegas, t, x):
+# least squares for input data and model
+def leastSquaresFit(t, data, model):
     # INPUTS:
-    # omegas:    Coefficients for time dependent phase terms
     # t:         1D time array with Ts spacing
-    # x:         1D array of input data
+    # data:      1D array of input data
+    # model:     1D array
     # OUTPUTS:
     # fit:       Least squares fit value
 
-    w1, w2, w3 = omegas; a = 2; p0 = 0
-    ls = (a*polyCos(t, p0, w1, w2, w3) - x**2)
+    ls = (model - data)**2
     fit = 0
-    for i in range(len(x)):
+    for i in range(len(t)):
         fit = fit + ls[i]
     return fit
 
@@ -85,7 +84,7 @@ def PSOPolyCosFit(t, x, lbounds, ubounds):
 
     RN = lambda omegas: -RSub(omegas, t, x) # generates function to be minimized over omegas
 
-    pso = PSO(func=RN, n_dim=3, pop=40, max_iter=250, lb=lbounds, ub=ubounds, w=0.7, c1=0.5, c2=0.5) # performs PSO fitting over omegas
+    pso = PSO(func=RN, n_dim=3, pop=40, max_iter=50, lb=lbounds, ub=ubounds, w=0.7, c1=0.5, c2=0.5) # performs PSO fitting over omegas
     pso.run()
     plt.plot(pso.gbest_y_hist)
 
@@ -93,7 +92,7 @@ def PSOPolyCosFit(t, x, lbounds, ubounds):
     return w1, w2, w3, R
 
 # seperately fits to segments of input coordinate data
-def PSOSegmenter(t, data, Nseg: int, lbounds, ubounds):
+def PSOSegmenter(t, data, Nseg: int, lbounds, ubounds, runs):
     # INPUTS:
     # t:                 1D time array with Ts spacing
     # data:              1D array of input data
@@ -103,21 +102,29 @@ def PSOSegmenter(t, data, Nseg: int, lbounds, ubounds):
     # model:             1D array of fitted model
 
     model = np.zeros(len(data)) # preparing array for model's dependent values
+    bestFits = np.zeros(Nseg)
+    for i in range(runs):
+        print("Now running PSO fit " + str(i))
+        for n in range(Nseg):
+            lt, ut = bounds(t, n, Nseg) # finds time index bounds for given fitting segment
+            tseg = t[lt:ut]; xseg = data[lt:ut] # segmented t and data values
 
-    for n in range(Nseg):
-        lt, ut = bounds(t, n, Nseg) # finds time index bounds for given fitting segment
-        tseg = t[lt:ut]; xseg = data[lt:ut] # segmented t and data values
+            w1, w2, w3, R = PSOPolyCosFit(tseg, xseg, lbounds, ubounds) # fits data to polyCos using PSO
 
-        w1, w2, w3, R = PSOPolyCosFit(tseg, xseg, lbounds, ubounds) # fits data to polyCos using PSO
+            N = sum(polyCos(tseg, 0, w1, w2, w3)**2) # variables for amplitude and phase calculation
+            A = sum(xseg*polyCos(tseg, 0, w1, w2, w3))
+            B = -sum(xseg*polyCos(tseg, -np.pi/2, w1, w2, w3))
+            a = R/N; p0 = np.arctan(B/A)
 
-        N = sum(polyCos(tseg, 0, w1, w2, w3)**2) # variables for amplitude and phase calculation
-        A = sum(xseg*polyCos(tseg, 0, w1, w2, w3))
-        B = -sum(xseg*polyCos(tseg, -np.pi/2, w1, w2, w3))
-        a = R/N; p0 = np.arctan(B/A)
+            runSeg = a*polyCos(tseg, p0, w1, w2, w3) # adds fitted segment to overall model
+            runFit = leastSquaresFit(tseg, data[lt:ut], runSeg)
 
-        model[lt:ut] = a*polyCos(tseg, p0, w1, w2, w3) # adds fitted segment to overall model
-        print('Omegas: ' + str([w1, w2, w3]) + '  p0: ' + str(p0) + '  A: ' + str(a))
-    
-    plotPSOFit(t, data, model)
-    return model
+            if i==0 or runFit<bestFits[n]:
+                model[lt:ut] = runSeg
+                bestFits[n] = runFit
+        
+        # print('Omegas: ' + str([w1, w2, w3]) + '  p0: ' + str(p0) + '  A: ' + str(a))
+
+        tfit = leastSquaresFit(t, data, model)
+    return model, tfit
 
