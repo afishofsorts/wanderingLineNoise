@@ -18,10 +18,10 @@ sa.plotAllTime(t, cleanSig, distSig, freqs, freqKnots, Ts, fmax)
 flim = 1.2*fmax*2*np.pi
 lbounds = [-flim, -200, -200]; ubounds = [flim, 200, 200] # w2 and w3 bounds are arbitrary right now
 
-Nseg = M; runs = 4
+Nseg = M; runs = 20
 
-model, lsf = pbf.PSOSegmenter(t, cleanSig, Nseg, lbounds, ubounds, runs)
-print(lsf)
+model, lsf = pbf.PSOMultirun(t, cleanSig, Nseg, lbounds, ubounds, runs)
+print(lsf/len(model))
 
 pbf.plotPSOFit(t, cleanSig, model)
 

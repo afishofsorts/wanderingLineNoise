@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.mlab as mlab
 import matplotlib.gridspec as gridspec
 from sko.PSO import PSO
+import time
 
 # cosine function with cubic phase
 def polyCos(t, p0, w1, w2, w3):
@@ -91,8 +92,27 @@ def PSOPolyCosFit(t, x, lbounds, ubounds):
     w1, w2, w3 = pso.gbest_x; R = -pso.gbest_y # best fit omegas and minimal R
     return w1, w2, w3, R
 
+def parCalc(t, x, w1, w2, w3, R):
+    N = sum(polyCos(t, 0, w1, w2, w3)**2) # variables for amplitude and phase calculation
+    A = sum(x*polyCos(t, 0, w1, w2, w3))
+    B = -sum(x*polyCos(t, -np.pi/2, w1, w2, w3))
+    a = R/N; p0 = np.arctan(B/A)
+
+    return a, p0
+
+def PSOSegmenter(t, data, n, Nseg, lbounds, ubounds):
+    lt, ut = bounds(t, n, Nseg) # finds time index bounds for given fitting segment
+    tseg = t[lt:ut]; xseg = data[lt:ut] # segmented t and data values
+
+    w1, w2, w3, R = PSOPolyCosFit(tseg, xseg, lbounds, ubounds) # fits data to polyCos using PSO
+    a, p0 = parCalc(tseg, xseg, w1, w2, w3, R) # calculates min amplitude and phase based on omegas
+
+    runSeg = a*polyCos(tseg, p0, w1, w2, w3) # generates model signal given previously calculated parameters
+    runFit = leastSquaresFit(tseg, data[lt:ut], runSeg) # finds the fit of that model against original data
+    return lt, ut, runSeg, runFit
+
 # seperately fits to segments of input coordinate data
-def PSOSegmenter(t, data, Nseg: int, lbounds, ubounds, runs):
+def PSOMultirun(t, data, Nseg: int, lbounds, ubounds, runs):
     # INPUTS:
     # t:                 1D time array with Ts spacing
     # data:              1D array of input data
@@ -100,31 +120,31 @@ def PSOSegmenter(t, data, Nseg: int, lbounds, ubounds, runs):
     # lbounds, ubounds:  Bounds for omega parameters
     # OUTPUTS:
     # model:             1D array of fitted model
+    start = time.perf_counter()
+    runstart = time.perf_counter()
 
     model = np.zeros(len(data)) # preparing array for model's dependent values
     bestFits = np.zeros(Nseg)
+    isBadFit =  [True for i in range(Nseg)]
+
     for i in range(runs):
         print("Now running PSO fit " + str(i))
         for n in range(Nseg):
-            lt, ut = bounds(t, n, Nseg) # finds time index bounds for given fitting segment
-            tseg = t[lt:ut]; xseg = data[lt:ut] # segmented t and data values
+            if i==0 or isBadFit[n]: # checks if 
+                print("Initiating segment " + str(n))
+                lt, ut, runSeg, runFit = PSOSegmenter(t, data, n, Nseg, lbounds, ubounds)
 
-            w1, w2, w3, R = PSOPolyCosFit(tseg, xseg, lbounds, ubounds) # fits data to polyCos using PSO
+                if i==0 or runFit<bestFits[n]:
+                    model[lt:ut] = runSeg # commits model to the best fit if this run's fit is better than any previous
+                    bestFits[n] = runFit
+                    if runFit/len(runSeg) < 0.1:
+                        bfend = time.perf_counter()
+                        print("Best Fit for Segment " + str(n) + " found in " + str(bfend-start) + "s")
+                        isBadFit[n] = False
+        runend = time.perf_counter()
+        print("Time elapsed for run " + str(i) + ": " + str(runend-runstart))
+        runstart = runend
 
-            N = sum(polyCos(tseg, 0, w1, w2, w3)**2) # variables for amplitude and phase calculation
-            A = sum(xseg*polyCos(tseg, 0, w1, w2, w3))
-            B = -sum(xseg*polyCos(tseg, -np.pi/2, w1, w2, w3))
-            a = R/N; p0 = np.arctan(B/A)
-
-            runSeg = a*polyCos(tseg, p0, w1, w2, w3) # adds fitted segment to overall model
-            runFit = leastSquaresFit(tseg, data[lt:ut], runSeg)
-
-            if i==0 or runFit<bestFits[n]:
-                model[lt:ut] = runSeg
-                bestFits[n] = runFit
-        
-        # print('Omegas: ' + str([w1, w2, w3]) + '  p0: ' + str(p0) + '  A: ' + str(a))
-
-        tfit = leastSquaresFit(t, data, model)
+    tfit = leastSquaresFit(t, data, model)
     return model, tfit
 
