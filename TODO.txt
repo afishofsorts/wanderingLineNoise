@@ -1,0 +1,20 @@
+LEGACY/CLEANUP:
+Remove time arrays, redundant if every function creates it's own based on Ts
+
+Remove data storage
+
+Make yaxes of plotAllTime consistent
+
+Simplify PSOSegmenter w/ sub functions
+
+RESEARCH:
+
+Test PSOSegmenter runtime depending on number of segments
+
+How to decide suitable w2 w3 bounds?
+
+Get smooth Nseg variation curve (multiple runs?)
+
+Use signal spectroscopy to find fmin and fmax for any data processing!
+
+Make accessing segment fit parameters available
