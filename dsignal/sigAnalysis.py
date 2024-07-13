@@ -11,6 +11,14 @@ def FFT(x, y, Ts):
     yg = 2.0/N * np.abs(yf[0:N//2]) # slices first half to match xf and converts to weighted amplitude
     return xf, yg
 
+def FFTPeaks(x, y, Ts):
+    xf, yg = FFT(x, y, Ts)
+    peaks = []; thresh = 0.0001 # peaks initialization and threshold for detecting peaks
+    for i in range(len(yg)-2):
+        if thresh < yg[i]:
+            peaks = np.append(peaks, xf[i]) # adds any FFT amplitudes above thresh
+    return peaks
+
 # plots Fast Fourier Transform for entire coordinate data set
 def plotFFT(x, y, Ts, dir: str):
     # INPUTS:

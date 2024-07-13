@@ -4,7 +4,7 @@ sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 sys.path.append(str(Path(__file__).parent.parent.parent))
 from dsignal import freqGen as fg, sigGen as sg, sigAnalysis as sa
 import numpy as np
-import PSOBestFit as pbf
+import psoBestFit as pbf
 import matplotlib.pyplot as plt
 import time
 
@@ -38,14 +38,14 @@ def PSORunTimes(t, data, Nseg: int, lbounds, ubounds, runs: int):
         runstart = time.perf_counter()
         for n in range(Nseg):
             if i==0 or isBadFit[n]: # checks if 
-                lt, ut, runSeg, segFit = pbf.PSOSegmenter(t, data, n, Nseg, lbounds, ubounds)
+                lt, ut, runSeg, segFit, lbounds, ubounds = pbf.PSOSegmenter(t, data, n, Nseg, lbounds, ubounds)
 
                 if i==0 or segFit<bestFits[n]:
                     model[lt:ut] = runSeg # commits model to the best fit if runfit is better than any previous
                     bestFits[n] = segFit
                     if segFit/len(runSeg) < 0.1:
                         isBadFit[n] = False
-        
+
         runend = time.perf_counter()
         runTimes[i] = runend - runstart
         runstart = runend
@@ -57,11 +57,10 @@ def PSORunTimes(t, data, Nseg: int, lbounds, ubounds, runs: int):
 f0 = 60; band = 30; A = 2; M = 10
 fmax = f0 + band; Ts = 1/(10*fmax)
 
-Nseg = 5
-trials = 1; runs = 20
+Nseg = 10
+trials = 20; runs = 20
 
 runRange = np.arange(1, runs+1, 1)
-print(runRange)
 fitHist = np.zeros(shape=(trials, runs))
 runTimes = np.zeros(shape=(trials, runs))
 
@@ -69,8 +68,8 @@ for i in range(trials):
     print("OscTest Trial " + str(i))
     t, cleanSig = genWL(f0, band, M, Ts, A)
 
-    flim = 1.2*fmax*2*np.pi
-    lbounds = [-flim, -200, -200]; ubounds = [flim, 200, 200] # w2 and w3 bounds are arbitrary right now
+    flim = sa.FFTPeaks(t, cleanSig, Ts)[-1]
+    lbounds = [-flim, -flim, -flim]; ubounds = [flim, flim, flim]
 
     runTimes[i, :], fitHist[i, :] = PSORunTimes(t, cleanSig, Nseg, lbounds, ubounds, runs)
 
@@ -78,6 +77,6 @@ newRR = np.zeros(shape=(trials, runs))
 for i in range(trials):
     newRR[i, :] = runRange
 
-filename = 'Data_Nseg5'
+filename = 'Data_Nseg10_DB'
 dir = 'pso\\tests\\multirun\\saved\\' + filename + '.npy'
 np.save(dir, [newRR, runTimes, fitHist])

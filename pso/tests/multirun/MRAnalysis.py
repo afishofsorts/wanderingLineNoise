@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-filename = 'Data_Nseg10'
+filename = 'Data_Nseg10_DB'
 dir = 'pso\\tests\\multirun\\saved\\' + filename + '.npy'
 
 runRange, runTimes, fitHist = np.load(dir)
@@ -9,7 +9,7 @@ runRange, runTimes, fitHist = np.load(dir)
 trials = len(runRange[:, 0])
 print(trials)
 
-filename = 'RTPlot_Nseg10'
+filename = 'RTPlot_Nseg10_DB'
 dir = 'pso\\tests\\multirun\\saved\\' + filename + '.png'
 
 for i in range(trials):
@@ -19,7 +19,7 @@ plt.xlabel('Run'); plt.ylabel('Time For Single Run')
 plt.savefig(dir)
 plt.close()
 
-filename = 'LSFPlot_Nseg10'
+filename = 'LSFPlot_Nseg10_DB'
 dir = 'pso\\tests\\multirun\\saved\\' + filename + '.png'
 
 for i in range(trials):
