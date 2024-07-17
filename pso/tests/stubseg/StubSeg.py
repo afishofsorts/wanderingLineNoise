@@ -11,25 +11,26 @@ import matplotlib.pyplot as plt
 f0 = 60; band = 30; A = 2; M = 10
 fmax = f0 + band; Ts = 1/(10*fmax)
 
-random.seed(12) # fixed seed for testing
+random.seed(29) # fixed seed for testing
 freqKnots = fg.genKnot(M, f0, band) # knots for freq spline
 t, freqs = fg.genBSpline(freqKnots, Ts) # generates time and freq spline arrays
 cleanSig, distSig = sg.genSignal(t, freqs, A, Ts) # generates signal with smoothly varying frequency and iid noise
-
 sa.plotAllTime(t, cleanSig, distSig, freqs, freqKnots, Ts, fmax, 'pso\\tests\\stubseg\\saved\\wl_seg_time_plots.png')
 
 # now that data has been generated, we can try and fit using pso
-Nseg = 10; runs = 20
-lt, ut = pbf.bounds(t, 9, Nseg) # finds time index bounds for given fitting segment
-tseg = t[lt:ut]; xseg = cleanSig[lt:ut] # segmented t and data values
-
-flim = sa.FFTPeaks(t, cleanSig, Ts)[-1]*5
+xf, yg = sa.FFT(t, cleanSig, Ts); flim = sa.FFTPeaks(xf, yg, Ts)[-1]
 lbounds = [-flim, -flim, -flim]; ubounds = [flim, flim, flim]
 
-model, lsf, isBadFit = pbf.PSOMultirun(tseg, xseg, 1, lbounds, ubounds, runs, False)
-print(lsf/len(model))
+osc0 = sum(xf*yg)/sum(yg)
+OPS = 5; Nseg = int(osc0/OPS); runs = 20
+model, lsf, isBadFit = pbf.PSOMultirun(t, cleanSig, Nseg, lbounds, ubounds, runs)
 
+lt, ut = pbf.bounds(t, Nseg-1, Nseg) # finds time index bounds for given fitting segment
+tseg = t[lt:ut]; xseg = cleanSig[lt:ut] # segmented t and data values
+
+model, lsf, isBadFit = pbf.PSOMultirun(tseg, xseg, 1, lbounds, ubounds, runs, False)
 plt.show()
 
+tshift = tseg - tseg[0]
 pa.plotPSOFit(tseg, xseg, model, isBadFit, 'pso\\tests\\stubseg\\saved\\pso_seg_fit.png')
-sa.plotSpectComp(tseg, model, freqs[lt:ut], Ts, fmax, 'PSO Fit Spectrogram and Clean Input Frequency Spline', 'pso\\tests\\stubseg\\saved\\wl_seg_spectC.png')
+sa.plotSpectComp(tshift, model, freqs[lt:ut], Ts, fmax, 'PSO Fit Spectrogram and Clean Input Frequency Spline', 'pso\\tests\\stubseg\\saved\\wl_seg_spectC.png')

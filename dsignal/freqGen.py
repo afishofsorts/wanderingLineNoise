@@ -77,7 +77,7 @@ def genStepFreq(N: int, fmin: float, fmax: float, Ts: float, n=10):
     return t, freqs
 
 # generates periodically changing frequency function
-def genPeriodicFreq(f0, Ts, f1, Tnum):
+def genPeriodicFreq(f0, Ts, f1, Tnum, A):
     # INPUTS:
     # f0:        Middle of frequency range
     # Ts:        Sampling rate
@@ -88,7 +88,7 @@ def genPeriodicFreq(f0, Ts, f1, Tnum):
     # freqs:     1D array of periodic frequency values
 
     t = np.arange(0, Tnum/f1, Ts)
-    freqs = f0 + f1*np.cos(2*np.pi*f1*t)
+    freqs = f0 + A*np.cos(2*np.pi*f1*t)
 
     return t, freqs
 

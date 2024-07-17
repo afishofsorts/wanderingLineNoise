@@ -55,3 +55,9 @@ def genSignal(t, freqs, A: float, Ts: float, stnd = 0.4):
     cleanSig = A*np.cos(phase*2*np.pi) # creates sinusoidal signal
     distSig = addVar(cleanSig, stnd*A) # adds iid noise
     return cleanSig, distSig
+
+def genWL(f0, band, A, Ts, M = 10):
+    freqKnots = fg.genKnot(M, f0, band) # knots for freq spline
+    t, freqs = fg.genBSpline(freqKnots, Ts) # generates time and freq spline arrays
+    cleanSig, distSig = genSignal(t, freqs, A, Ts) # generates signal with smoothly varying frequency and iid noise
+    return t, cleanSig, distSig, freqs, freqKnots

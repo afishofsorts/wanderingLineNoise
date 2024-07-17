@@ -55,13 +55,11 @@ def bounds(t, n, Nseg):
     # lt, ut     Integer number indices to bound time array
 
     tstep = len(t)//Nseg
-
     lt = tstep*n
     if n!=(Nseg-1):
-        ut = lt + tstep
+        ut = lt + tstep + 1
     else:
         ut = len(t)+1
-
     return lt, ut
 
 # Uses PSO to fit polyCos model to input data
@@ -76,7 +74,7 @@ def PSOPolyCosFit(t, x, lbounds, ubounds):
     RN = lambda omegas: -RSub(omegas, t, x) # generates function to be minimized over omegas
 
     random.seed()
-    pso = PSO(func=RN, n_dim=3, pop=40, max_iter=100, lb=lbounds, ub=ubounds, w=0.7, c1=0.5, c2=0.5) # performs PSO fitting over omegas
+    pso = PSO(func=RN, n_dim=3, pop=40, max_iter=50, lb=lbounds, ub=ubounds, w=0.7, c1=0.5, c2=0.5) # performs PSO fitting over omegas
     pso.run()
 
     w1, w2, w3 = pso.gbest_x; R = -pso.gbest_y # best fit omegas and minimal R
@@ -93,13 +91,10 @@ def parCalc(t, x, w1, w2, w3, R):
 def boundCheck(w1, w2, w3, lbounds, ubounds):
     if abs(w1) == abs(lbounds[0]):
         lbounds[0] = 1.5*lbounds[0]; ubounds[0] = 1.5*ubounds[0]
-        print('w1 bound is too small, increasing search parameter to +-' + str(abs(lbounds[1])))
     if abs(w2) == abs(lbounds[1]):
         lbounds[1] = 1.5*lbounds[1]; ubounds[1] = 1.5*ubounds[1]
-        print('w2 bound is too small, increasing search parameter to +-' + str(abs(lbounds[1])))
     if abs(w3) == abs(lbounds[2]):
         lbounds[2] = 1.5*lbounds[2]; ubounds[2] = 1.5*ubounds[2]
-        print('w3 bound is too small, increasing search parameter to +-' + str(abs(lbounds[1])))
     return lbounds, ubounds
 
 def PSOSegmenter(t, data, n, Nseg, lbounds, ubounds, dynBound = True):
@@ -113,7 +108,7 @@ def PSOSegmenter(t, data, n, Nseg, lbounds, ubounds, dynBound = True):
         lbounds, ubounds = boundCheck(w1, w2, w3, lbounds, ubounds)
 
     runSeg = a*polyCos(tseg, p0, w1, w2, w3) # generates model signal given previously calculated parameters
-    segFit = leastSquaresFit(tseg, data[lt:ut], runSeg) # finds the fit of that model against original data
+    segFit = leastSquaresFit(tseg, xseg, runSeg) # finds the fit of that model against original data
     return lt, ut, runSeg, segFit, lbounds, ubounds
 
 # seperately fits to segments of input coordinate data
@@ -125,33 +120,23 @@ def PSOMultirun(t, data, Nseg: int, lbounds, ubounds, runs, dynBound = True):
     # lbounds, ubounds:  Bounds for omega parameters
     # OUTPUTS:
     # model:             1D array of fitted model
-    start = time.perf_counter()
-    runstart = time.perf_counter()
 
     model = np.zeros(len(data)) # preparing array for model's dependent values
     bestFits = np.zeros(Nseg)
     isBadFit =  [True for i in range(Nseg)]
 
     for i in range(runs):
-        print("Now running PSO fit " + str(i))
         for n in range(Nseg):
-            if i==0 or isBadFit[n]: # checks if 
-                print("Initiating segment " + str(n))
+            if i==0 or isBadFit[n]: # checks if
                 lt, ut, runSeg, segFit, lbounds, ubounds = PSOSegmenter(t, data, n, Nseg, lbounds, ubounds, dynBound)
 
                 if i==0 or segFit<bestFits[n]:
                     model[lt:ut] = runSeg # commits model to the best fit if runfit is better than any previous
                     bestFits[n] = segFit
                     if segFit/len(runSeg) < 0.1:
-                        bfend = time.perf_counter()
-                        print("Best Fit for Segment " + str(n) + " found in " + str(bfend-start) + "s")
                         isBadFit[n] = False
-        runend = time.perf_counter()
-        print("Time elapsed for run " + str(i) + ": " + str(runend-runstart))
-        runstart = runend
 
     tfit = leastSquaresFit(t, data, model)
-    end = time.perf_counter()
-    print("Total time elapsed: " + str(end-start))
     return model, tfit, isBadFit
+
 

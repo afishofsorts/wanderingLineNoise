@@ -3,32 +3,25 @@ import numpy as np
 from pso import psoBestFit as pbf, psoAnalysis as pa
 import random
 import matplotlib.pyplot as plt
+import os
 
-f0 = 60 # median frequency
-band = 30 # range of variation above and below f0
-fmax = f0 + band
-A = 2 # amplitude of signal
-M = 10 # number of breakpoints with 10 f0 oscillations between them
-Ts = 1/(10*fmax) # sampling rate
+seed = 29; random.seed(seed)
+dir = 'saved\\' + str(seed)
+if not os.path.exists(dir):
+    os.makedirs(dir)
 
-random.seed(12)
-freqKnots = fg.genKnot(M, f0, band) # knots for freq spline
-t, freqs = fg.genBSpline(freqKnots, Ts) # generates time and freq spline arrays
-cleanSig, distSig = sg.genSignal(t, freqs, A, Ts) # generates signal with smoothly varying frequency and iid noise
-
-sa.plotAllTime(t, cleanSig, distSig, freqs, freqKnots, Ts, fmax, 'saved\\wl_time_plots.png')
+f0 = 60; band = 30; fmax = f0 + band; Ts = 1/(10*fmax)
+t, cleanSig, distSig, freqs, freqKnots = sg.genWL(f0, band, 2, Ts)
+sa.plotAllTime(t, cleanSig, distSig, freqs, freqKnots, Ts, fmax, dir + '\\wl_time_plots_' + str(seed) + '.png')
 
 # now that data has been generated, we can try and fit using pso
-flim = sa.FFTPeaks(t, cleanSig, Ts)[-1]
+xf, yg = sa.FFT(t, cleanSig, Ts); flim = sa.FFTPeaks(xf, yg, Ts)[-1]
+lbounds = [-flim, -flim, -flim]; ubounds = [flim, flim, flim]
 
-lbounds = [-flim, -flim, -flim]; ubounds = [flim, flim, flim] # w2 and w3 bounds are arbitrary right now
-Nseg = 10; runs = 20
-
+oscT = t[-1]*sum(xf*yg)/sum(yg)
+OPS = 7; Nseg = int(oscT/OPS); runs = 20
 model, lsf, isBadFit = pbf.PSOMultirun(t, cleanSig, Nseg, lbounds, ubounds, runs)
-print(lsf/len(model))
 
-plt.show()
-
-pa.plotPSOFit(t, cleanSig, model, isBadFit, 'saved\\pso_fit.png')
-pa.modelDif(t, cleanSig, model, 'saved\\pso_dif.png')
-sa.plotSpectComp(t, model, freqs, Ts, fmax, 'PSO Fit Spectrogram and Clean Input Frequency Spline', 'saved\\wl_spectC.png')
+pa.plotPSOFit(t, cleanSig, model, isBadFit, dir + '\\pso_fit_' + str(seed) + '.png')
+pa.modelDif(t, cleanSig, model, dir + '\\pso_dif_' + str(seed) + '.png')
+sa.plotSpectComp(t, model, freqs, Ts, fmax, 'PSO Fit Spectrogram and Clean Input Frequency Spline', dir + '\\wl_spectC_' + str(seed) + '.png')

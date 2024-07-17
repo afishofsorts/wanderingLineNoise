@@ -10,11 +10,11 @@ def plotPSOFit(t, data, model, isBadFit, dir: str):
 
     plt.figure(figsize=(15, 10))
     plt.plot(t, data)
-    plt.plot(t, model)
+    plt.plot(t, model, 'r')
     for i in range(len(isBadFit)):
-        if isBadFit[i]:
+        if not isBadFit[i]:
             lt, ut = pbf.bounds(t, i, len(isBadFit))
-            plt.plot(t[lt:ut], model[lt:ut], 'r')
+            plt.plot(t[lt:ut], model[lt:ut], 'orange')
     plt.title('Clean WL Signal and Resulting PSO Fit')
     plt.xlabel('Time (s)'); plt.ylabel('Strain')
     plt.savefig(dir)
