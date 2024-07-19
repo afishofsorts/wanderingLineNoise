@@ -1,7 +1,8 @@
-import random
+a = 3
 
-is1 = [True, False, True]
-is2 = [True, True, True]
+def myFunc(a):
+    if a==2:
+        return True
+    return False
 
-print(is1 == [True for i in range(3)])
-print(is2 == [True for i in range(3)])
+print(myFunc(a))

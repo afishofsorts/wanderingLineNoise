@@ -30,6 +30,16 @@ def leastSquaresFit(t, data, model):
         fit = fit + ls[i]
     return fit
 
+def rootCheck(t, a, b, c):
+    sqrtArg = (2*b)**2 - 4*3*a*c
+    if sqrtArg < 0:
+        return False
+    root1 = (-2*b + np.sqrt(sqrtArg)) / (2 * 3*a)
+    root2 = (-2*b - np.sqrt(sqrtArg)) / (2 * 3*a)
+    if t[0] < root1 < t[-1] or t[0] < root1 < t[-1]:
+        return True
+    return False
+
 # Simplifies polyCos fitting by substituting the to be maximized function with R
 def RSub(omegas, t, x):
     # INPUTS:
@@ -40,6 +50,11 @@ def RSub(omegas, t, x):
     # R:         Omega dependent function whose argmax is the same as least squares minimization
 
     w1, w2, w3 = omegas
+
+    isRoot = rootCheck(t, w1, w2, w3)
+
+    if isRoot:
+        return -999999
     A = sum(x*polyCos(t, 0, w1, w2, w3))
     B = -sum(x*polyCos(t, -np.pi/2, w1, w2, w3))
     R = np.sqrt(A**2+B**2)
@@ -67,7 +82,7 @@ def PSOPolyCosFit(t, x, lbounds, ubounds):
     # INPUTS:
     # t:                 1D time array with Ts spacing
     # x:                 1D array of input data
-    # lbounds, ubounds:  Bounds for omega parameters
+    # lbounds, ubounds:  Length 3 arrays of omega parameter  bounds
     # OUTPUTS:
     # w1, w2, w3, R:     Best fit omegas and minimal R
 
@@ -80,7 +95,16 @@ def PSOPolyCosFit(t, x, lbounds, ubounds):
     w1, w2, w3 = pso.gbest_x; R = -pso.gbest_y # best fit omegas and minimal R
     return w1, w2, w3, R
 
+# calculates best fit phase and amplitude given w1, w2, and w3
 def parCalc(t, x, w1, w2, w3, R):
+    # INPUTS:
+    # t:                 1D time array with Ts spacing
+    # x:                 1D array of input data
+    # w1, w2, w3, R:     Best fit omegas and minimal R
+    # OUTPUTS:
+    # a:                 Amplitude
+    # p0:                Phase
+
     N = sum(polyCos(t, 0, w1, w2, w3)**2) # variables for amplitude and phase calculation
     A = sum(x*polyCos(t, 0, w1, w2, w3))
     B = -sum(x*polyCos(t, -np.pi/2, w1, w2, w3))
@@ -88,7 +112,14 @@ def parCalc(t, x, w1, w2, w3, R):
 
     return a, p0
 
+# checks if PSO fit hit the parameter bounds and needs to be expanded
 def boundCheck(w1, w2, w3, lbounds, ubounds):
+    # INPUTS:
+    # w1, w2, w3:        Best fit omegas
+    # lbounds, ubounds:  Length 3 arrays of omega parameter  bounds
+    # OUTPUTS:
+    # lbounds, ubounds:  Length 3 arrays of omega parameter  bounds
+
     if abs(w1) == abs(lbounds[0]):
         lbounds[0] = 1.5*lbounds[0]; ubounds[0] = 1.5*ubounds[0]
     if abs(w2) == abs(lbounds[1]):
@@ -139,4 +170,21 @@ def PSOMultirun(t, data, Nseg: int, lbounds, ubounds, runs, dynBound = True):
     tfit = leastSquaresFit(t, data, model)
     return model, tfit, isBadFit
 
+def PSOMR(tseg, xseg, runs, lbounds, ubounds, thresh = 0.1, dynBound = True):
+    isBadFit = True; bestFit = 0
+    for i in range(runs):
+        if i==0 or isBadFit:
+            w1, w2, w3, R = PSOPolyCosFit(tseg, xseg, lbounds, ubounds) # fits data to polyCos using PSO
+            a, p0 = parCalc(tseg, xseg, w1, w2, w3, R) # calculates min amplitude and phase based on omegas
 
+            if dynBound:
+                lbounds, ubounds = boundCheck(w1, w2, w3, lbounds, ubounds)
+
+            runSeg = a*polyCos(tseg, p0, w1, w2, w3) # generates model signal given previously calculated parameters
+            segFit = leastSquaresFit(tseg, xseg, runSeg) # finds the fit of that model against original data
+
+            if i==0 or segFit<bestFit:
+                bestFit = segFit
+                if segFit/len(runSeg) < thresh:
+                    isBadFit = False
+    return runSeg, isBadFit

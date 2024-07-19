@@ -27,6 +27,6 @@ lbounds = [-flim, -flim, -flim]; ubounds = [flim, flim, flim]
 Nseg = 24; runs = 20
 model, lsf, isBadFit = pbf.PSOMultirun(t, cleanSig, Nseg, lbounds, ubounds, runs)
 
-pa.plotPSOFit(t, cleanSig, model, isBadFit, 'pso\\tests\\perbreak\\saved\\perb_pso_fit_.png')
-pa.modelDif(t, cleanSig, model, 'pso\\tests\\perbreak\\saved\\perb_dif.png')
-sa.plotSpectComp(t, model, freqs, Ts, fmax, 'PSO Fit Spectrogram and Clean Input Frequency Spline', 'pso\\tests\\perbreak\\saved\\perb_spectC_.png')
+pa.plotPSOFit(t, cleanSig, model, isBadFit, 'pso\\tests\\perbreak\\saved\\perb_pso_fit_24.png')
+pa.modelDif(t, cleanSig, model, 'pso\\tests\\perbreak\\saved\\perb_dif_24.png')
+sa.plotSpectComp(t, model, freqs, Ts, fmax, 'PSO Fit Spectrogram and Clean Input Frequency Spline', 'pso\\tests\\perbreak\\saved\\perb_spectC_24.png')

@@ -1,17 +1,20 @@
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent.parent.parent))
+sys.path.append(str(Path(__file__).parent.parent.parent))
 from dsignal import freqGen as fg, sigGen as sg, sigAnalysis as sa
 import numpy as np
 from pso import psoBestFit as pbf, psoAnalysis as pa
 import random
 import matplotlib.pyplot as plt
 import os
-import sys
 
 seed = random.randrange(sys.maxsize); random.seed(seed)
-dir = 'saved\\' + str(seed)
+dir = 'pso\\tests\\lowfreq\\saved\\' + str(seed)
 if not os.path.exists(dir):
     os.makedirs(dir)
 
-f0 = 60; band = 30; fmax = f0 + band; Ts = 1/(10*fmax)
+f0 = 10; band = 7; fmax = f0 + band; Ts = 1/(10*fmax)
 t, cleanSig, distSig, freqs, freqKnots = sg.genWL(f0, band, 2, Ts)
 sa.plotAllTime(t, cleanSig, distSig, freqs, freqKnots, Ts, fmax, dir + '\\wl_time_plots_' + str(seed) + '.png')
 
