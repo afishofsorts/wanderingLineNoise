@@ -33,11 +33,11 @@ def plotFFT(x, y, Ts, dir: str):
     plt.xlabel('frequency (Hz)'); plt.ylabel('FFT')
     plt.grid()
     plt.savefig(dir)
-    plt.show()
+    plt.close()
     return xf, yg
 
 # plots spectrogram of input data using short FFT
-def plotSpectrogram(t, data, Ts, fmax, dir: str):
+def plotSpectrogram(t, data, Ts, fmax, dir: str, vmax=0):
     # INPUTS:
     # t:         1D time array with Ts spacing
     # data:      1D array
@@ -62,12 +62,16 @@ def plotSpectrogram(t, data, Ts, fmax, dir: str):
                 rf"$\Delta f = {round(SFT.delta_f, 2):g}\,$Hz)",
             xlim=(t_lo, t_hi), ylim=(0, flim))
 
-    im1 = ax1.imshow(abs(Sx), origin='lower', aspect='auto',
-                    extent=SFT.extent(N), cmap='viridis')
+    if vmax == 0:
+        im1 = ax1.imshow(abs(Sx), origin='lower', aspect='auto',
+                        extent=SFT.extent(N), cmap='viridis')
+    else:
+        im1 = ax1.imshow(abs(Sx), origin='lower', aspect='auto',
+                        extent=SFT.extent(N), cmap='viridis', vmax=vmax)
     fig1.colorbar(im1, label="PSD")
     fig1.tight_layout()
     plt.savefig(dir)
-    plt.show()
+    plt.close()
 
 # plots frequency, resulting sin wave, iid sin wave, and spectrogram of iid against time
 def plotAllTime(t, cleanSig, distSig, freqs, freqKnots, Ts, fmax, dir: str):
@@ -96,49 +100,47 @@ def plotAllTime(t, cleanSig, distSig, freqs, freqKnots, Ts, fmax, dir: str):
     Sx = SFT.stft(distSig)  # perform the STFT
 
     t_lo, t_hi = SFT.extent(N)[:2]  # time range of plot
-    plot4.set_title(rf"Short FFTs of iid Signal in Spectrogram")
-    plot4.set(xlabel=f"t (s)", ylabel=f"freq. (Hz)", xlim=(t_lo, t_hi), ylim=(0, flim))
+    plot4.set_title(rf"Short FFTs of i.i.d. Signal in Spectrogram")
+    plot4.set(xlabel=f"t (s)", ylabel=f"Frequency (Hz)", xlim=(t_lo, t_hi), ylim=(0, flim))
     im1 = plot4.imshow(abs(Sx), origin='lower', aspect='auto', extent=SFT.extent(N), cmap='viridis') # heat mapping
 
     # Frequency plot
     plot1.plot(t, freqs, color='hotpink')
     plot1.plot(freqKnots[0], freqKnots[1], 'o', color = 'pink')
-    plot1.set(ylabel='freq (Hz)', xlim=(t_lo, t_hi), ylim=(0, flim), title='Frequency(Hz)')
+    plot1.set(ylabel='Frequency (Hz)', xlim=(t_lo, t_hi), ylim=(0, flim), title='Cubic B-Spline')
 
     # Clean signal plot
     plot2.plot(t, cleanSig, '-', color='g') 
-    plot2.set(ylabel='q(t)', xlim=(t_lo, t_hi), title='Clean Signal') 
+    plot2.set(ylabel='Strain', xlim=(t_lo, t_hi), title='Clean Signal') 
 
     # iid signal plot
     plot3.plot(t, distSig, 'o', color='g') 
-    plot3.set(ylabel='q(t)', xlim=(t_lo, t_hi), title='Dist. Signal') 
+    plot3.set(ylabel='Strain', xlim=(t_lo, t_hi), title='Dist. Signal') 
     
     plt.tight_layout()
     plt.savefig(dir)
-    plt.show() 
+    plt.close() 
 
 # Plots Power Spectral Density of input data with logarithmic and linear plotting
-def plotPSD(data, Ts, dir: str):
+def plotPSD(data, Ts, title, dir: str, linear=True):
     # INPUTS:
     # data:      1D array
     # Ts:        Sampling rate
     # filename:  String of saved plot image
 
-    plt.figure() # plot setup and structure
-    plot1 = plt.subplot2grid((2, 1), (0, 0)) 
-    plot2 = plt.subplot2grid((2, 1), (1, 0))
-
-    power, freqs = plot1.psd(data, 512, 1 / Ts, scale_by_freq=False) # performs psd
-    plot1.set_title('Logarithmic Plot'); plot1.set_xlabel('')
-    plot2.plot(freqs, power); plot2.set_ylabel('Power')
-    plot2.set_title('Linear Plot'); plot2.set_xlabel('Freq. (Hz)')
+    power, freqs = plt.psd(data, 512, 1 / Ts, scale_by_freq=False) # performs psd
+    if linear:
+        plt.close()
+    plt.title(title)
+    plt.xlabel('Frequency (Hz)')
+    plt.plot(freqs, power); plt.ylabel('Intensity (counts)')
     
     plt.tight_layout()
     plt.savefig(dir)
-    plt.show()
+    plt.close()
 
 # Plots input frequency signal over spectrogram of some data using short FFT 
-def plotSpectComp(t, SpecData, freqs, Ts, fmax, title, dir: str):
+def plotSpectComp(t, SpecData, freqs, freqKnots, Ts, fmax, title, dir: str, vmax=0):
     # INPUTS:
     # t:         1D time array with Ts spacing
     # SpectComp: 1D array of data for spectroscopy
@@ -159,13 +161,17 @@ def plotSpectComp(t, SpecData, freqs, Ts, fmax, title, dir: str):
 
     t_lo, t_hi = SFT.extent(N)[:2]  # time range of plot
     ax1.set_title(title)
-    ax1.set(xlabel=f"Time (s)", ylabel=f"Freq. (Hz)", xlim=(t_lo, t_hi), ylim=(0, flim))
+    ax1.set(xlabel=f"Time (s)", ylabel=f"Frequency (Hz)", xlim=(t_lo, t_hi), ylim=(0, flim))
 
-    im1 = ax1.imshow(abs(Sx), origin='lower', aspect='auto', extent=SFT.extent(N), cmap='viridis') # heat mapping
+    if vmax == 0:
+        im1 = ax1.imshow(abs(Sx), origin='lower', aspect='auto', extent=SFT.extent(N), cmap='viridis') # heat mapping
+    else:
+        im1 = ax1.imshow(abs(Sx), origin='lower', aspect='auto', extent=SFT.extent(N), cmap='viridis', vmax=vmax) # heat mapping
     fig1.colorbar(im1, label="PSD")
 
     ax1.plot(t, freqs, '--', color='r') # adds input frequency
+    ax1.plot(freqKnots[0], freqKnots[1], 'o', color = 'r')
     plt.legend(['Frequency Spline'], loc='upper left')
     fig1.tight_layout()
     plt.savefig(dir)
-    plt.show()
+    plt.close()

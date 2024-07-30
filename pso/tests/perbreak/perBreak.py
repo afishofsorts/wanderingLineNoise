@@ -19,13 +19,14 @@ plt.plot(t, freqs)
 plt.title('Input Signal Spectrogram')
 plt.xlabel('Time (s)'); plt.ylabel('Frequency (Hz)')
 plt.savefig('pso\\tests\\perbreak\\saved\\perb_input.png')
-plt.show()
+plt.close()
 
 xf, yg = sa.FFT(t, cleanSig, Ts); flim = sa.FFTPeaks(xf, yg, Ts)[-1]
-lbounds = [-flim, -flim, -flim]; ubounds = [flim, flim, flim]
+lb0 = [-2*flim, -2*flim, -2*flim]; ub0 = [2*flim, 2*flim, 2*flim]
 
-Nseg = 24; runs = 20
-model, lsf, isBadFit = pbf.PSOMultirun(t, cleanSig, Nseg, lbounds, ubounds, runs)
+Nseg = 2; runs = 2
+model, lsf, isBadFit = pbf.PSOMultiSeg(t, cleanSig, Nseg, runs, lb0, ub0, subdiv = False)
+# model, lsf, isBadFit = pbf.PSOMultirun(t, cleanSig, Nseg, lb0, ub0, runs)
 
 pa.plotPSOFit(t, cleanSig, model, isBadFit, 'pso\\tests\\perbreak\\saved\\perb_pso_fit_24.png')
 pa.modelDif(t, cleanSig, model, 'pso\\tests\\perbreak\\saved\\perb_dif_24.png')
