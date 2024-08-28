@@ -2,10 +2,9 @@ import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 sys.path.append(str(Path(__file__).parent.parent.parent))
-from dsignal import freqGen as fg, sigGen as sg, sigAnalysis as sa
+from dsignal import sigGen as sg, sigAnalysis as sa
 import numpy as np
 import psoBestFit as pbf
-import matplotlib.pyplot as plt
 from sko.PSO import PSO
 import random
 
@@ -53,7 +52,7 @@ def PSOMIMS(t, data, runs, lbounds, ubounds, Nseg, mi):
 f0 = 60; band = 30; fmax = f0 + band; Ts = 1/(10*fmax)
 t, cleanSig, distSig, freqs, freqKnots = sg.genWL(f0, band, 2, Ts, M=100)
 
-xf, yg = sa.FFT(t, distSig, Ts); flim = sa.FFTPeaks(xf, yg, Ts)[-1]
+xf, yg = sa.FFT(t, distSig, Ts); flim = sa.FFTPeaks(xf, yg)[-1]
 lb0 = [-flim, -flim, -flim]; ub0 = [flim, flim, flim]
 
 NGB = PSOMIMS(t, distSig, 60, lb0, ub0, 100, 300)

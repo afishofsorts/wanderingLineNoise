@@ -3,7 +3,6 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 sys.path.append(str(Path(__file__).parent.parent.parent))
 from dsignal import freqGen as fg, sigGen as sg, sigAnalysis as sa
-import numpy as np
 from pso import psoBestFit as pbf, psoAnalysis as pa
 import random
 import matplotlib.pyplot as plt

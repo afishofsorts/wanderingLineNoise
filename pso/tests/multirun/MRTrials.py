@@ -5,9 +5,6 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 from dsignal import freqGen as fg, sigGen as sg, sigAnalysis as sa
 import numpy as np
 import psoBestFit as pbf
-import matplotlib.pyplot as plt
-import time
-import threading
 
 def genWL(f0, band, M, Ts, A):
     freqKnots = fg.genKnot(M, f0, band) # knots for freq spline
@@ -51,7 +48,7 @@ lsf = np.zeros(shape=(trials, runs))
 segTimes = np.zeros(shape=(trials, runs))
 t, cleanSig, distSig, freqs, freqKnots = genWL(f0, band, M, Ts, A)
 
-flim = sa.FFTPeaks(t, cleanSig, Ts)[-1]
+flim = sa.FFTPeaks(t, cleanSig)[-1]
 lbounds = [-flim, -flim, -flim]; ubounds = [flim, flim, flim]
 
 BFS = PSOMultiSeg(t, distSig, 100, 30, lbounds, ubounds, 100, trials)

@@ -1,9 +1,6 @@
 import numpy as np
 import random as rand
 from . import freqGen as fg
-from scipy.interpolate import splrep, BSpline
-import matplotlib.pyplot as plt
-import pandas as pd
 
 # converts frequency to phase using rectangle approximation
 def freqToPhase(t, freqs, Ts):

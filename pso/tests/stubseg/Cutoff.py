@@ -6,8 +6,6 @@ from dsignal import freqGen as fg, sigGen as sg, sigAnalysis as sa
 import numpy as np
 from pso import psoBestFit as pbf, psoAnalysis as pa
 import random
-import matplotlib.pyplot as plt
-import os
 
 seed = 25; random.seed(seed)
 

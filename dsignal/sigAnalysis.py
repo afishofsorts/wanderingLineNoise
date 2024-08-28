@@ -4,22 +4,8 @@ import numpy as np
 from scipy.signal import ShortTimeFFT
 from scipy.signal.windows import gaussian
 
+# performs Fast Fourier Transform for coordinate data set
 def FFT(x, y, Ts):
-    N = len(x)
-    yf = fft(y)
-    xf = fftfreq(N, Ts)[:N//2] # slices positive half of fftfreq return
-    yg = 2.0/N * np.abs(yf[0:N//2]) # slices first half to match xf and converts to weighted amplitude
-    return xf, yg
-
-def FFTPeaks(xf, yg, Ts):
-    peaks = []; thresh = 0.0001 # peaks initialization and threshold for detecting peaks
-    for i in range(len(yg)-2):
-        if thresh < yg[i]:
-            peaks = np.append(peaks, xf[i]) # adds any FFT amplitudes above thresh
-    return peaks
-
-# plots Fast Fourier Transform for entire coordinate data set
-def plotFFT(x, y, Ts, dir: str):
     # INPUTS:
     # x:         1D array of x values
     # y:         1D array of y values
@@ -28,22 +14,59 @@ def plotFFT(x, y, Ts, dir: str):
     # xf:        1D array of FFT frequency values
     # yg:        1D array of weighted FFT amplitudes
 
+    N = len(x)
+    yf = fft(y)
+    xf = fftfreq(N, Ts)[:N//2] # slices positive half of fftfreq return
+    yg = 2.0/N * np.abs(yf[0:N//2]) # slices first half to match xf and converts to weighted amplitude
+    return xf, yg
+
+# takes weighted FFT and returns coordinates for y values above threshold
+def FFTPeaks(xf, yg, thresh = 0.0001):
+    # INPUTS:
+    # xf:        1D array of FFT frequency values
+    # yg:        1D array of weighted FFT amplitudes
+    # OUTPUTS:
+    # peaks:     2D array of coordinates for y values above threshold
+
+    peaks = [] # peaks list initialization
+    for i in range(len(yg)-2):
+        if thresh < yg[i]:
+            peaks = np.append(peaks, xf[i]) # adds any FFT amplitudes above thresh
+    return peaks
+
+# plots Fast Fourier Transform for coordinate data set
+def plotFFT(x, y, Ts, dir='none'):
+    # INPUTS:
+    # x:         1D array of x values
+    # y:         1D array of y values
+    # Ts:        Sampling rate
+    # dir:       Directory to save plot PNG to
+    # OUTPUTS:
+    # xf:        1D array of FFT frequency values
+    # yg:        1D array of weighted FFT amplitudes
+    # Image:     PNG of FFT plot saved to dir
+
     xf, yg = FFT(x, y, Ts)
     plt.plot(xf, yg, '-')
     plt.xlabel('frequency (Hz)'); plt.ylabel('FFT')
     plt.grid()
-    plt.savefig(dir)
-    plt.close()
+    if dir=='none':
+        plt.show()
+    else:
+        plt.savefig(dir)
+        plt.close
     return xf, yg
 
 # plots spectrogram of input data using short FFT
-def plotSpectrogram(t, data, Ts, fmax, dir: str, vmax=0):
+def plotSpectrogram(t, data, Ts, fmax, dir='none', vmax=0):
     # INPUTS:
     # t:         1D time array with Ts spacing
     # data:      1D array
     # Ts:        Sampling rate
     # fmax:      Maximum frequency in data
-    # filename:  String of saved plot image
+    # dir:       Directory to save plot PNG to
+    # OUTPUTS:
+    # Image:     PNG of FFT plot saved to dir
 
     N = len(data); flim = int(1.5*fmax)
 
@@ -70,11 +93,14 @@ def plotSpectrogram(t, data, Ts, fmax, dir: str, vmax=0):
                         extent=SFT.extent(N), cmap='viridis', vmax=vmax)
     fig1.colorbar(im1, label="PSD")
     fig1.tight_layout()
-    plt.savefig(dir)
-    plt.close()
+    if dir=='none':
+        plt.show()
+    else:
+        plt.savefig(dir)
+        plt.close()
 
 # plots frequency, resulting sin wave, iid sin wave, and spectrogram of iid against time
-def plotAllTime(t, cleanSig, distSig, freqs, freqKnots, Ts, fmax, dir: str):
+def plotAllTime(t, cleanSig, distSig, freqs, freqKnots, Ts, fmax, dir='none'):
     # INPUTS:
     # t:         1D time array with Ts spacing
     # cleanSig:  1D array of clean signal
@@ -83,7 +109,9 @@ def plotAllTime(t, cleanSig, distSig, freqs, freqKnots, Ts, fmax, dir: str):
     # freqKnots: 2-tuple of time and frequency values used for BSpline generation  
     # Ts:        Sampling rate
     # fmax:      Maximum frequency in data
-    # filename:  String of saved plot image
+    # dir:       Directory to save plot PNG to
+    # OUTPUTS:
+    # Image:     PNG of FFT plot saved to dir
 
     plt.figure(figsize=(15, 10)) # plot setup and structure
     plot1 = plt.subplot2grid((4, 1), (0, 0)) 
@@ -118,15 +146,21 @@ def plotAllTime(t, cleanSig, distSig, freqs, freqKnots, Ts, fmax, dir: str):
     plot3.set(ylabel='Strain', xlim=(t_lo, t_hi), title='Dist. Signal') 
     
     plt.tight_layout()
-    plt.savefig(dir)
-    plt.close() 
+    if dir=='none':
+        plt.show()
+    else:
+        plt.savefig(dir)
+        plt.close()
 
 # Plots Power Spectral Density of input data with logarithmic and linear plotting
-def plotPSD(data, Ts, title, dir: str, linear=True):
+def plotPSD(data, Ts, title, dir='none', linear=True):
     # INPUTS:
     # data:      1D array
     # Ts:        Sampling rate
-    # filename:  String of saved plot image
+    # title:     Plot title
+    # dir:       Directory to save plot PNG to
+    # OUTPUTS:
+    # Image:     PNG of FFT plot saved to dir
 
     power, freqs = plt.psd(data, 512, 1 / Ts, scale_by_freq=False) # performs psd
     if linear:
@@ -136,19 +170,24 @@ def plotPSD(data, Ts, title, dir: str, linear=True):
     plt.plot(freqs, power); plt.ylabel('Intensity (counts)')
     
     plt.tight_layout()
-    plt.savefig(dir)
-    plt.close()
+    if dir=='none':
+        plt.show()
+    else:
+        plt.savefig(dir)
+        plt.close()
 
 # Plots input frequency signal over spectrogram of some data using short FFT 
-def plotSpectComp(t, SpecData, freqs, freqKnots, Ts, fmax, title, dir: str, vmax=0):
+def plotSpectComp(t, SpecData, freqs, freqKnots, Ts, fmax, title, dir='none', vmax=0):
     # INPUTS:
     # t:         1D time array with Ts spacing
-    # SpectComp: 1D array of data for spectroscopy
+    # SpectData: 1D array of data for spectroscopy
     # freqs:     1D frequency array
     # Ts:        Sampling rate
     # fmax:      Maximum frequency in data
     # title:     Header for plot
-    # filename:  String of saved plot image
+    # dir:       Directory to save plot PNG to
+    # OUTPUTS:
+    # Image:     PNG of FFT plot saved to dir
 
     fig1, ax1 = plt.subplots(figsize=(10., 6.)) # plot setup and structure
 
@@ -173,5 +212,8 @@ def plotSpectComp(t, SpecData, freqs, freqKnots, Ts, fmax, title, dir: str, vmax
     ax1.plot(freqKnots[0], freqKnots[1], 'o', color = 'r')
     plt.legend(['Frequency Spline'], loc='upper left')
     fig1.tight_layout()
-    plt.savefig(dir)
-    plt.close()
+    if dir=='none':
+        plt.show()
+    else:
+        plt.savefig(dir)
+        plt.close()

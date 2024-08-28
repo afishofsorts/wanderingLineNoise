@@ -5,7 +5,6 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 from dsignal import freqGen as fg, sigGen as sg, sigAnalysis as sa
 import numpy as np
 import psoBestFit as pbf
-import matplotlib.pyplot as plt
 import time
 import random
 from sko.PSO import PSO
@@ -83,7 +82,7 @@ for i in range(trials):
     print('Running trial ' + str(i))
     for j in range(len(tsegs)-1):
         print('Testing seg length ' + str(j))
-        flim = sa.FFTPeaks(t, cleanSig, Ts)[-1]
+        flim = sa.FFTPeaks(t, cleanSig)[-1]
         lbounds = [-flim, -flim, -flim]; ubounds = [flim, flim, flim]
 
         lt = np.where(t>tsegs[0])[0][0]; ut = np.where(t>tsegs[j+1])[0][0]

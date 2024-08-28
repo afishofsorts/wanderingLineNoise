@@ -2,14 +2,11 @@ import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 sys.path.append(str(Path(__file__).parent.parent.parent))
-from dsignal import freqGen as fg, sigGen as sg, sigAnalysis as sa
+from dsignal import sigGen as sg, sigAnalysis as sa
 from pso import psoAnalysis as pa
 import numpy as np
 import psoBestFit as pbf
-import matplotlib.pyplot as plt
-import time
 import random
-from sko.PSO import PSO
 import os
 import statistics
 
@@ -28,7 +25,7 @@ for i in range(15):
     sa.plotAllTime(t, cleanSig, distSig, freqs, freqKnots, Ts, fmax, dir + '\\wl_time_plots_' + str(seed) + '.png')
 
     # now that data has been generated, we can try and fit using pso
-    xf, yg = sa.FFT(t, distSig, Ts); flim = sa.FFTPeaks(xf, yg, Ts)[-1]
+    xf, yg = sa.FFT(t, distSig, Ts); flim = sa.FFTPeaks(xf, yg)[-1]
     lb0 = [-flim, -flim, -flim]; ub0 = [flim, flim, flim]
 
     oscT = t[-1]*sum(xf*yg)/sum(yg)

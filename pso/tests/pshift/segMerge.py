@@ -37,7 +37,7 @@ t, cleanSig, distSig, freqs, freqKnots = sg.genWL(f0, band, 2, Ts)
 sa.plotAllTime(t, cleanSig, distSig, freqs, freqKnots, Ts, fmax, dir + '\\wl_time_plots_' + str(seed) + '.png')
 
 # now that data has been generated, we can try and fit using pso
-xf, yg = sa.FFT(t, cleanSig, Ts); flim = sa.FFTPeaks(xf, yg, Ts)[-1]
+xf, yg = sa.FFT(t, cleanSig, Ts); flim = sa.FFTPeaks(xf, yg)[-1]
 lb0 = [-flim, -flim, -flim]; ub0 = [flim, flim, flim]
 
 oscT = t[-1]*sum(xf*yg)/sum(yg)

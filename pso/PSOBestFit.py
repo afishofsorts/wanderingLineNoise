@@ -1,10 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import matplotlib.mlab as mlab
-import matplotlib.gridspec as gridspec
 from sko.PSO import PSO
 import sys
 import random
+import statistics
 
 # cosine function with cubic phase
 def polyCos(t, p0, w1, w2, w3):
@@ -15,16 +14,8 @@ def polyCos(t, p0, w1, w2, w3):
 
     return np.cos(w1*t + w2*t**2 + w3*t**3 + p0)
 
-def polySin(t, p0, w1, w2, w3):
-    # INPUTS:
-    # t:           1D time array with Ts spacing
-    # p0           Initial phase
-    # w1, w2, w3:  Coefficients for time dependent phase terms
-
-    return np.sin(w1*t + w2*t**2 + w3*t**3 + p0)
-
 # least squares for input data and model
-def leastSquaresFit(t, data, model):
+def leastSquaresFit(data, model):
     # INPUTS:
     # t:         1D time array with Ts spacing
     # data:      1D array of input data
@@ -33,22 +24,28 @@ def leastSquaresFit(t, data, model):
     # fit:       Least squares fit value
 
     ls = (model - data)**2
-    fit = 0
-    for i in range(len(t)):
-        fit = fit + ls[i]
+    fit = sum(ls)
     return fit
 
+# checks if quadratic function is negative during t
 def rootCheck(t, a, b, c):
-    sqrtArg = (2*b)**2 - 4*3*a*c
+    # INPUTS:
+    # t:         1D time array with Ts spacing
+    # a, b, c:   Quadratic coefficients
+    # OUTPUTS:
+    # Boolean:   True if function is negative during t
+
+    # assumed throughout that section of quadratic over t is mostly positive
+    sqrtArg = b**2 - 4*a*c # arguement under square root in quadratic formula
     if sqrtArg < 0:
-        return False
-    root1 = (-2*b + np.sqrt(sqrtArg)) / (2 * 3*a)
-    root2 = (-2*b - np.sqrt(sqrtArg)) / (2 * 3*a)
-    if t[0] < root1 < t[-1] or t[0] < root1 < t[-1]:
+        return False # roots would be imaginary, no real solution
+    root1 = (-b + np.sqrt(sqrtArg)) / (2 * a) # quadratic formula
+    root2 = (-b - np.sqrt(sqrtArg)) / (2 * a)
+    if t[0] < root1 < t[-1] or t[0] < root2 < t[-1]:
         return True
     return False
 
-# Simplifies polyCos fitting by substituting the to be maximized function with R
+# simplifies polyCos fitting by substituting the to be maximized function with R
 def RSub(omegas, t, x):
     # INPUTS:
     # omegas:    Coefficients for time dependent phase terms
@@ -59,10 +56,10 @@ def RSub(omegas, t, x):
 
     w1, w2, w3 = omegas
 
-    isRoot = rootCheck(t, w1, w2, w3)
-
+    isRoot = rootCheck(t, w1, 2*w2, 3*w3) # checks if omegas result in a function with negative frequency
     if isRoot:
-        return -999999
+        return -999999 # if so, disincentivises PSO with bad fit
+    
     A = sum(x*polyCos(t, 0, w1, w2, w3))
     B = -sum(x*polyCos(t, -np.pi/2, w1, w2, w3))
     R = np.sqrt(A**2+B**2)
@@ -115,126 +112,149 @@ def parCalc(t, x, w1, w2, w3, R):
 
     N = sum(polyCos(t, 0, w1, w2, w3)**2) # variables for amplitude and phase calculation
     A = sum(x*polyCos(t, 0, w1, w2, w3))
-    B = -sum(x*polySin(t, 0, w1, w2, w3))
+    B = -sum(x*polyCos(t, -np.pi/2, w1, w2, w3))
     a = R/N; p0 = np.arctan(B/A)
 
     return a, p0
 
-def boundIncr(lbounds, ubounds, k):
-    lbounds[k] = 1.5*lbounds[k]; ubounds[k] = 1.5*ubounds[k]
+# multiplies kth entry of upper and lower bounds by incr
+def boundIncr(lbounds, ubounds, k, incr=1.5):
+    # INPUTS:
+    # lbounds, ubounds:  Length 3 arrays of omega parameter bounds
+    # k:                 Index for bounds                
+    # incr:              Multiplication term
+    # OUTPUTS:
+    # lbounds, ubounds:  Multiplied length 3 arrays
+
+    lbounds[k] = incr*lbounds[k]; ubounds[k] = incr*ubounds[k]
     return lbounds, ubounds
 
 # checks if PSO fit hit the parameter bounds and needs to be expanded
-def boundCheck(w1, w2, w3, lbounds, ubounds):
+def boundCheck(omegas, lbounds, ubounds):
     # INPUTS:
-    # w1, w2, w3:        Best fit omegas
-    # lbounds, ubounds:  Length 3 arrays of omega parameter  bounds
+    # omegas:            Best fit omegas
+    # lbounds, ubounds:  Length 3 arrays of omega parameter bounds
     # OUTPUTS:
-    # lbounds, ubounds:  Length 3 arrays of omega parameter  bounds
+    # lbounds, ubounds:  Length 3 arrays of omega parameter bounds
 
-    if abs(w1) == abs(lbounds[0]):
-        lbounds, ubounds = boundIncr(lbounds, ubounds, 0)
-    if abs(w2) == abs(lbounds[1]):
-        lbounds, ubounds = boundIncr(lbounds, ubounds, 1)
-    if abs(w3) == abs(lbounds[2]):
-        lbounds, ubounds = boundIncr(lbounds, ubounds, 2)
+    for i in range(3):
+        if abs(omegas[i]) == abs(lbounds[i]):
+            lbounds, ubounds = boundIncr(lbounds, ubounds, 0)
     return lbounds, ubounds
 
-def wideBI(lbounds, ubounds, mult):
-    lbounds[0] = mult*lbounds[0]; ubounds[0] = mult*ubounds[0]
-    lbounds[1] = mult*lbounds[1]; ubounds[1] = mult*ubounds[1]
-    lbounds[2] = mult*lbounds[2]; ubounds[2] = mult*ubounds[2]
+# multiplies all search bounds by incr
+def wideBI(lbounds, ubounds, incr):
+    # INPUTS:
+    # lbounds, ubounds:  Length 3 arrays of omega parameter bounds
+    # incr:              Multiplication term
+    # OUTPUTS:
+    # lbounds, ubounds:  Multiplied length 3 arrays
+    for i in range(3):
+        lbounds[i] = incr*lbounds[i]; ubounds[i] = incr*ubounds[i]
     return lbounds, ubounds
 
+# performs one PSO fit to signal segment
 def PSOSingleRun(tseg, xseg, lbounds, ubounds, dynBound = True, mi = 50):
+    # INPUTS:
+    # tseg:              1D array segment of t
+    # xseg:              1D array segment of data
+    # lbounds, ubounds:  Length 3 arrays of omega parameter bounds
+    # dynBound:          Boolean for search bound increase if best fit omegas are at bounds
+    # mi:                Maximum iterations for PSO algorithm
+    # OUTPUTS:
+    # modSeg:            1D array of quadratic chirp model for this segment
+    # segFit:            Least Squares Fit for model and xseg
+    # lbounds, ubounds:  Length 3 arrays of omega parameter bounds with possible increases since input
+
     w1, w2, w3, R = PSOPolyCosFit(tseg, xseg, lbounds, ubounds, mi) # fits data to polyCos using PSO
     a, p0 = parCalc(tseg, xseg, w1, w2, w3, R) # calculates min amplitude and phase based on omegas
 
     if dynBound:
-        lbounds, ubounds = boundCheck(w1, w2, w3, lbounds, ubounds)
+        lbounds, ubounds = boundCheck([w1, w2, w3], lbounds, ubounds)
 
     modSeg = a*polyCos(tseg, p0, w1, w2, w3) # generates model signal given previously calculated parameters
-    segFit = leastSquaresFit(tseg, xseg, modSeg) # finds the fit of that model against original data
+    segFit = leastSquaresFit(xseg, modSeg) # finds the fit of that model against original data
     return modSeg, segFit, lbounds, ubounds
 
+# performs multiple independent PSO fits to a single segment and returns the best found
 def PSOMultiRun(tseg, xseg, runs, lbounds, ubounds, thresh = 0, dynBound = True, mi = 50):
+    # INPUTS:
+    # tseg:              1D array segment of t
+    # xseg:              1D array segment of data
+    # runs:              Number of independent PSO fits
+    # lbounds, ubounds:  Length 3 arrays of omega parameter bounds
+    # thresh:            Least Squares Fit value below which a fit it considered good enough
+    # dynBound:          Boolean for search bound increase if best fit omegas are at bounds
+    # mi:                Maximum iterations for PSO algorithm
+    # OUTPUTS:
+    # bestSeg:           1D array of bets quadratic chirp model for this segment across all runs
+    # isBadFit:          Boolean for if bestSeg's Least Squares Fit is less that thresh
+
     isBadFit = True; bestFit = 0; bestSeg = np.zeros(len(tseg))
     for i in range(runs):
         if isBadFit:
-            if i % 5 == 0 and i!= 0:
+            if i % 5 == 0 and i!= 0: # increases search bounds and maximum iterations automatically every 5 runs
                 lbounds, ubounds = wideBI(lbounds, ubounds, 2.5)
                 mi = int(round(mi*1.5, 0))
-            modSeg, segFit, lbounds, ubounds = PSOSingleRun(tseg, xseg, lbounds, ubounds, dynBound, mi)
+            modSeg, segFit, lbounds, ubounds = PSOSingleRun(tseg, xseg, lbounds, ubounds, dynBound, mi) # performs one PSO run
 
             if i==0 or segFit<bestFit:
-                bestFit = segFit
+                bestFit = segFit # updates bestFit and bestSeg with better model from this run
                 bestSeg = np.copy(modSeg)
-                if segFit/len(modSeg) < thresh:
+                if segFit/len(modSeg) < thresh: # if Least Squares Fit is below thresh, ends runs there
                     isBadFit = False
-    return bestSeg, isBadFit
+    return bestFit, bestSeg
 
-def PSOMultiSeg(t, data, Nseg, runs, lb0, ub0, thresh = 0, dynBound = True, subdiv = True):
-    model = np.zeros(len(t)); isBadFit = [True for i in range(Nseg)]
-    m = 0
-    for n in range(Nseg):
-        print('Beginning to fit seg ' + str(n))
-        lbounds = np.copy(lb0); ubounds = np.copy(ub0)
-        lt, ut = bounds(t, n, Nseg)
-        tseg = t[lt:ut]; xseg = data[lt:ut]
-        model[lt:ut], isBadFit[m] = PSOMultiRun(tseg, xseg, runs, lbounds, ubounds, thresh, dynBound)
-        if subdiv and isBadFit[m]:
-            lbounds = np.copy(lb0); ubounds = np.copy(ub0)
-            isBadFit = isBadFit[:m] + [True] + isBadFit[m:]
-            halfInd = len(tseg)//2; modSeg = model[lt:ut]
-            modSeg[:halfInd], isBadFit[m] = PSOMultiRun(tseg[:halfInd], xseg[:halfInd], runs, lbounds, ubounds, thresh, dynBound)
-            lbounds = np.copy(lb0); ubounds = np.copy(ub0)
-            modSeg[halfInd:], isBadFit[m+1] = PSOMultiRun(tseg[halfInd:], xseg[halfInd:], runs, lbounds, ubounds, thresh, dynBound)
-            model[lt:ut] = modSeg
-            m = m + 1
-        m = m + 1
-    
-    tfit = leastSquaresFit(t, data, model)
-    return model, tfit, isBadFit
-
-def PSOSegmenter(t, data, n, Nseg, lbounds, ubounds, dynBound = True):
-    lt, ut = bounds(t, n, Nseg) # finds time index bounds for given fitting segment
-    tseg = t[lt:ut]; xseg = data[lt:ut] # segmented t and data values
-
-    w1, w2, w3, R = PSOPolyCosFit(tseg, xseg, lbounds, ubounds) # fits data to polyCos using PSO
-    a, p0 = parCalc(tseg, xseg, w1, w2, w3, R) # calculates min amplitude and phase based on omegas
-
-    if dynBound:
-        lbounds, ubounds = boundCheck(w1, w2, w3, lbounds, ubounds)
-
-    runSeg = a*polyCos(tseg, p0, w1, w2, w3) # generates model signal given previously calculated parameters
-    segFit = leastSquaresFit(tseg, xseg, runSeg) # finds the fit of that model against original data
-    return lt, ut, runSeg, segFit, lbounds, ubounds
-
-# seperately fits to segments of input coordinate data
-def PSOMultirun(t, data, Nseg: int, lbounds, ubounds, runs, dynBound = True):
+# break input signal up and performs multiple independent PSO fits for each segment returning best found for all
+def PSOMultiSeg(t, data, Nseg, runs, lb0, ub0, thresh = 0, dynBound = True, mi = 50, subdiv = True):
     # INPUTS:
-    # t:                 1D time array with Ts spacing
+    # t:                 1D array with Ts spacing
     # data:              1D array of input data
-    # Nseg:              Number of segments to split the data into and fit seperately
-    # lbounds, ubounds:  Bounds for omega parameters
+    # Nseg:              Number of segments to split t and data into
+    # runs:              Number of independent PSO fits for each segment
+    # lb0, ub0:          Length 3 arrays of initial omega parameter bounds
+    # thresh:            Least Squares Fit value below which a fit it considered good enough
+    # dynBound:          Boolean for search bound increase if best fit omegas are at bounds
+    # mi:                Maximum iterations for PSO algorithm
+    # subdiv:            Boolean for further splitting segments that don't reach thresh in 1 multirun
     # OUTPUTS:
-    # model:             1D array of fitted model
+    # model:             1D array of bets quadratic chirp model for all segments across all runs
+    # finalFit:          Least Squares Fit for final model and data
+    # isBadFit:          Boolean for if bestSeg's Least Squares Fit is less that thresh
 
-    model = np.zeros(len(data)) # preparing array for model's dependent values
-    bestFits = np.zeros(Nseg)
-    isBadFit =  [True for i in range(Nseg)]
-
-    for i in range(runs):
+    model = np.zeros(len(t)); isBadFit = [True for i in range(Nseg)]; segFits = np.zeros(Nseg)
+    for n in range(Nseg):
+        print('Now fitting seg ' + str(n))
+        lbounds = np.copy(lb0); ubounds = np.copy(ub0)
+        lt, ut = bounds(t, n, Nseg) # finds index bounds for nth segment
+        tseg = t[lt:ut]; xseg = data[lt:ut]
+        segFits[n], model[lt:ut] = PSOMultiRun(tseg, xseg, runs, lbounds, ubounds, thresh, dynBound, mi) # performs multiple PSO runs
+    
+    if subdiv:
+        print('Checking for poor outlier fits...')
+        SFAvg = sum(segFits)/len(segFits); SFStnd = statistics.stdev(segFits)
         for n in range(Nseg):
-            if i==0 or isBadFit[n]: # checks if
-                print('Run ' + str(i) + 'Seg ' + str(n) + ': ' + str(lbounds))
-                lt, ut, runSeg, segFit, lbounds, ubounds = PSOSegmenter(t, data, n, Nseg, lbounds, ubounds, dynBound)
+            if segFits[n] > SFAvg + 2*SFStnd:
+                print('Segment ' + str(n) + ' has an outlier fit, attempting to subdivide')
+                lbounds = np.copy(lb0); ubounds = np.copy(ub0)
+                lt, ut = bounds(t, n, Nseg)
+                halfInd = len(tseg)//2; modSeg = model[lt:ut]
+                SF1, modSeg[:halfInd] = PSOMultiRun(tseg[:halfInd], xseg[:halfInd], runs, lbounds, ubounds, thresh, dynBound, mi)
+                lbounds = np.copy(lb0); ubounds = np.copy(ub0)
+                SF2, modSeg[halfInd:] = PSOMultiRun(tseg[halfInd:], xseg[halfInd:], runs, lbounds, ubounds, thresh, dynBound, mi)
+                SFtotal = leastSquaresFit(xseg, modSeg)
+                if SFtotal < segFits[n]:
+                    model[lt:ut] = modSeg
+                    segFits[n] = SFtotal
+                    print('Better fit found for segment ' + str(n) + ' with sub fits: ' + str(round(SF1)) + ', ' + str(round(SF2)))
+                else:
+                    print('No better fit was found, retaining original outlier')
+    
+    for n in range(Nseg):
+        if segFits[n] < thresh:
+            isBadFit[n] = False
+        
+    finalFit = leastSquaresFit(data, model); 
+    print('Done! Model generated with fit ' + str(round(finalFit)))
+    return model, finalFit, isBadFit
 
-                if i==0 or segFit<bestFits[n]:
-                    model[lt:ut] = runSeg # commits model to the best fit if runfit is better than any previous
-                    bestFits[n] = segFit
-                    if segFit/len(runSeg) < 0.1:
-                        isBadFit[n] = False
-
-    tfit = leastSquaresFit(t, data, model)
-    return model, tfit, isBadFit

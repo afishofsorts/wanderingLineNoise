@@ -39,18 +39,24 @@ def genBSpline(knots, Ts):
     return t, smoothFit
 
 # plots a given BSpline and its knots
-def plotSpline(t, spline, knots, dir: str):
+def plotSpline(t, spline, knots, dir='none'):
     # INPUTS:
     # t:         1D time array with Ts spacing
     # spline:    1D array of BSpline y values
     # knots:     2-tuple of knots times and frequencies
-    # filename:  string for saved image name
+    # dir:       Directory to save plot PNG to
+    # OUTPUTS:
+    # Image:     PNG of FFT plot saved to dir
 
-    plt.plot(knots[:, 0], knots[:, 1], 'o', color='pink')
+    plt.plot(knots[0], knots[1], 'o', color='pink')
     plt.plot(t, spline, '-', color='hotpink')
     plt.xlabel('t (s)'); plt.ylabel('freq (Hz)')
-    plt.savefig(dir)
-    plt.show()
+    plt.title('Clean Input Frequency BSpline')
+    if dir=='none':
+        plt.show()
+    else:
+        plt.savefig(dir)
+        plt.close()
 
 # generates frequency step function with at least n periods per step
 def genStepFreq(N: int, fmin: float, fmax: float, Ts: float, n=10):

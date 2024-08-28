@@ -2,10 +2,9 @@ import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 sys.path.append(str(Path(__file__).parent.parent.parent))
-from dsignal import freqGen as fg, sigGen as sg, sigAnalysis as sa
+from dsignal import freqGen as fg, sigGen as sg
 import numpy as np
 import psoBestFit as pbf
-import matplotlib.pyplot as plt
 import time
 
 def genWL(f0, band, M, Ts, A):

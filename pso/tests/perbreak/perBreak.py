@@ -3,11 +3,9 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 sys.path.append(str(Path(__file__).parent.parent.parent))
 from dsignal import freqGen as fg, sigGen as sg, sigAnalysis as sa
-import numpy as np
 from pso import psoBestFit as pbf, psoAnalysis as pa
 import random
 import matplotlib.pyplot as plt
-import os
 
 seed = 25; random.seed(seed)
 
@@ -21,7 +19,7 @@ plt.xlabel('Time (s)'); plt.ylabel('Frequency (Hz)')
 plt.savefig('pso\\tests\\perbreak\\saved\\perb_input.png')
 plt.close()
 
-xf, yg = sa.FFT(t, cleanSig, Ts); flim = sa.FFTPeaks(xf, yg, Ts)[-1]
+xf, yg = sa.FFT(t, cleanSig, Ts); flim = sa.FFTPeaks(xf, yg)[-1]
 lb0 = [-2*flim, -2*flim, -2*flim]; ub0 = [2*flim, 2*flim, 2*flim]
 
 Nseg = 2; runs = 2

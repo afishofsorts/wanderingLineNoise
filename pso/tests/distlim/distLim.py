@@ -2,12 +2,9 @@ import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 sys.path.append(str(Path(__file__).parent.parent.parent))
-from dsignal import freqGen as fg, sigGen as sg, sigAnalysis as sa
-from pso import psoAnalysis as pa
+from dsignal import sigGen as sg, sigAnalysis as sa
 import numpy as np
 import psoBestFit as pbf
-import matplotlib.pyplot as plt
-from sko.PSO import PSO
 import random
 
 ST = 30
@@ -22,7 +19,7 @@ for i in range(ST):
     t, cleanSig, distSig, freqs, freqKnots = sg.genWL(f0, band, 2, Ts, 10, stnd)
 
     # now that data has been generated, we can try and fit using pso
-    xf, yg = sa.FFT(t, distSig, Ts); flim = sa.FFTPeaks(xf, yg, Ts)[-1]
+    xf, yg = sa.FFT(t, distSig, Ts); flim = sa.FFTPeaks(xf, yg)[-1]
     lb0 = [-flim, -flim, -flim]; ub0 = [flim, flim, flim]
 
     oscT = t[-1]*sum(xf*yg)/sum(yg)
