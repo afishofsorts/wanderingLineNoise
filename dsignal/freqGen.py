@@ -3,6 +3,10 @@ import random as rand
 from scipy.interpolate import splrep, BSpline
 import matplotlib.pyplot as plt
 
+#######################################################################
+# FUNCTIONS TO GENERATE FREQUENCY FOR SIMUlATED WANDERING LINE SIGNAL #
+#######################################################################
+
 # generates breakpoints evenly spaced in time and uniformly random in frequency within fixed range
 def genKnot(M: int, f0: float, band: float, n = 10):
     # INPUTS:

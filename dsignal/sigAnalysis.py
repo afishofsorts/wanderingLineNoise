@@ -4,6 +4,10 @@ import numpy as np
 from scipy.signal import ShortTimeFFT
 from scipy.signal.windows import gaussian
 
+##############################
+# PLOTS FOR SIMULATED SIGNAL #
+##############################
+
 # performs Fast Fourier Transform for coordinate data set
 def FFT(x, y, Ts):
     # INPUTS:
@@ -58,7 +62,7 @@ def plotFFT(x, y, Ts, dir='none'):
     return xf, yg
 
 # plots spectrogram of input data using short FFT
-def plotSpectrogram(t, data, Ts, fmax, dir='none', vmax=0):
+def plotSpectrogram(data, Ts, fmax, hop: int, fmin=0, dir='none', vmax=0):
     # INPUTS:
     # t:         1D time array with Ts spacing
     # data:      1D array
@@ -68,11 +72,12 @@ def plotSpectrogram(t, data, Ts, fmax, dir='none', vmax=0):
     # OUTPUTS:
     # Image:     PNG of FFT plot saved to dir
 
-    N = len(data); flim = int(1.5*fmax)
+    M = hop*5; g_std = int(hop*8/10); mfft = hop*10
 
-    g_std = 8  # standard deviation for Gaussian window in samples
-    w = gaussian(50, std=g_std, sym=True)  # symmetric Gaussian window
-    SFT = ShortTimeFFT(w, hop=10, fs=1/Ts, mfft=200, scale_to='psd')
+    N = len(data); 
+
+    w = gaussian(M, std=g_std, sym=True)  # symmetric Gaussian window
+    SFT = ShortTimeFFT(w, hop=hop, fs=1/Ts, mfft=mfft, scale_to='psd')
     Sx = SFT.stft(data)  # perform the STFT
 
     fig1, ax1 = plt.subplots(figsize=(10., 6.))
@@ -83,7 +88,7 @@ def plotSpectrogram(t, data, Ts, fmax, dir='none', vmax=0):
                 rf"$\Delta t = {round(SFT.delta_t, 2):g}\,$s)",
             ylabel=f"Freq. $f$ in Hz ({round(SFT.f_pts, 2)} bins, " +
                 rf"$\Delta f = {round(SFT.delta_f, 2):g}\,$Hz)",
-            xlim=(t_lo, t_hi), ylim=(0, flim))
+            xlim=(t_lo, t_hi), ylim=(fmin, fmax))
 
     if vmax == 0:
         im1 = ax1.imshow(abs(Sx), origin='lower', aspect='auto',
@@ -177,7 +182,7 @@ def plotPSD(data, Ts, title, dir='none', linear=True):
         plt.close()
 
 # Plots input frequency signal over spectrogram of some data using short FFT 
-def plotSpectComp(t, SpecData, freqs, freqKnots, Ts, fmax, title, dir='none', vmax=0):
+def plotSpectComp(t, SpecData, freqs, freqKnots, Ts, fmax, hop: int, fmin=0, dir='none', vmax=0, title=''):
     # INPUTS:
     # t:         1D time array with Ts spacing
     # SpectData: 1D array of data for spectroscopy
@@ -191,21 +196,22 @@ def plotSpectComp(t, SpecData, freqs, freqKnots, Ts, fmax, title, dir='none', vm
 
     fig1, ax1 = plt.subplots(figsize=(10., 6.)) # plot setup and structure
 
-    N = len(SpecData); flim = int(1.5*fmax)
+    M = hop*5; g_std = int(hop*8/10); mfft = hop*20
 
-    g_std = 8  # standard deviation for Gaussian window in samples
-    w = gaussian(50, std=g_std, sym=True)  # symmetric Gaussian window
-    SFT = ShortTimeFFT(w, hop=10, fs=1/Ts, mfft=200, scale_to='psd')
+    N = len(SpecData)
+
+    w = gaussian(M, std=g_std, sym=True)  # symmetric Gaussian window
+    SFT = ShortTimeFFT(w, hop=hop, fs=1/Ts, mfft=mfft, scale_to='psd')
     Sx = SFT.stft(SpecData)  # perform the STFT
 
     t_lo, t_hi = SFT.extent(N)[:2]  # time range of plot
     ax1.set_title(title)
-    ax1.set(xlabel=f"Time (s)", ylabel=f"Frequency (Hz)", xlim=(t_lo, t_hi), ylim=(0, flim))
+    ax1.set(xlabel=f"Time (s)", ylabel=f"Frequency (Hz)", xlim=(t_lo, t_hi), ylim=(fmin, fmax))
 
     if vmax == 0:
         im1 = ax1.imshow(abs(Sx), origin='lower', aspect='auto', extent=SFT.extent(N), cmap='viridis') # heat mapping
     else:
-        im1 = ax1.imshow(abs(Sx), origin='lower', aspect='auto', extent=SFT.extent(N), cmap='viridis', vmax=vmax) # heat mapping
+        im1 = ax1.imshow(abs(Sx), origin='lower', aspect='auto', extent=SFT.extent(N), cmap='viridis', vmax=vmax)
     fig1.colorbar(im1, label="PSD")
 
     ax1.plot(t, freqs, '--', color='r') # adds input frequency

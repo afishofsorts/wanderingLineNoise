@@ -2,6 +2,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 
+#######################################################
+# TEST TO SEE HOW FIT QUALITY DEGRADES WITH IID NOISE #
+#######################################################
+
 filename = 'DL_data'
 dir = 'pso\\tests\\distlim\\saved\\' + filename + '.npy'
 stnds, lsf = np.load(dir)

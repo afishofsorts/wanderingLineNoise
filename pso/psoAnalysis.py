@@ -24,7 +24,7 @@ def plotPSOFit(t, data, model, isBadFit, dir='none'):
             plt.plot(t[lt:ut], model[lt:ut], 'orange')
     
     lsf = pbf.leastSquaresFit(data, model)
-    plt.text(2.1, 2.29, 'LSF: ' + str(round(lsf/len(t), 3)),
+    plt.text(2.1, 2.29, 'LSF Averaged Over Array Length: ' + str(round(lsf/len(t), 3)),
      horizontalalignment='left',
      verticalalignment='top', transform=ax.transAxes)
     plt.title('Clean WL Signal and Resulting PSO Fit')

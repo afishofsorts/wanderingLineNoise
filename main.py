@@ -1,38 +1,42 @@
-from dsignal import sigGen as sg, sigAnalysis as sa
+import scipy.io
 import numpy as np
-from pso import psoBestFit as pbf, psoAnalysis as pa
-import random
-import os
-import sys
+from dsignal import sigAnalysis as sa
+from pso import psoBestFit as pbf
 
-# initiated rng seeding and folder for output
-seed = random.randrange(0, sys.maxsize); random.seed(seed)
-dir = 'saved\\' + str(seed) + '_stnd_1.0'
-if not os.path.exists(dir):
-    os.makedirs(dir)
+dir = 'saved\\ligodata\\'
+filename = 'H-H1_LOSC_2KHZ_V1-1126309888-4096_condat_10to210sec.mat'
+mat = scipy.io.loadmat(dir + filename)
 
-# Parameters for simulated Wandering Line signal
-f0 = 60 # average frequency
-band = 30 # abs distance from f0 for signal
-fmax = f0 + band # maximum frequency
-Ts = 1/(10*fmax) # sampling rate
-t, cleanSig, distSig, freqs, freqKnots = sg.genWL(f0, band, 2, Ts, stnd=1.0) # creates signal
-np.save(dir + '\\_data.npy', [t, cleanSig, distSig])
-sa.plotAllTime(t, cleanSig, distSig, freqs, freqKnots, Ts, fmax, dir + '\\wl_time_plots_' + str(seed) + '.png')
+t = mat['dataX'][0]; y = mat['dataY'][:, 0]
 
-# now that data has been generated, we can try and fit using pso
-xf, yg = sa.FFT(t, distSig, Ts) # performs fast fourier transform on signal
-flim = sa.FFTPeaks(xf, yg)[-1] # returns highest frequency peak
-lb0 = [-flim, -flim, -flim]; ub0 = [flim, flim, flim] # creates initial search bounds for pso
+ind = np.where(t>40)[0][0]
+
+tseg = t[ind:] - t[ind]; yseg = y[ind:]
+Ts = tseg[1]-tseg[0]
+
+sa.plotPSD(yseg, Ts, 'PSD of LIGO Data', dir+'ligoPSD.png')
+# sa.plotSpectrogram(yseg, Ts, 1290, 1024, fmin=1300)
+
+# now we can try and fit using pso
+xf, yg = sa.FFT(tseg, yseg, Ts) # performs fast fourier transform on signal
+bandMin = np.where(xf>1200)[0][0]; bandMax = np.where(xf>1400)[0][0]
+xf = xf[bandMin:bandMax]; yg = yg[bandMin:bandMax]
+lb0 = [-1, -1, -1]; ub0 = [1, 1, 1] # creates initial search bounds for pso
 
 # now we choose how many segments to break the signal into before fitting
-oscT = t[-1]*sum(xf*yg)/sum(yg) # avg total oscillations of signal
-OPS = 10; Nseg = int(oscT/OPS) # oscillations per segment and number of segments
-runs = 20
-model, lsf, isBadFit = pbf.PSOMultiSeg(t, distSig, Nseg, runs, lb0, ub0, subdiv = True)
-np.save(dir + '\\_model.npy', model)
+f0 = sum(xf*yg)/sum(yg)
+oscT = tseg[-1]*f0 # avg total oscillations of signal
+# downsampling
+newN = int(len(tseg)/2000)
+tnew = np.zeros(newN); ynew = np.zeros(newN)
+for i in range(newN):
+    tnew[i] = tseg[i*2000]
+    ynew[i] = yseg[i*2000]
+sa.plotPSD(ynew, Ts, 'PSD of Downsampled LIGO Data', dir+'downsampledPSD.png')
 
-pa.plotPSOFit(t, distSig, model, isBadFit, dir + '\\pso_fit_' + str(seed) + '.png')
-pa.plotModelDif(t, distSig, model, dir + '\\pso_dif_' + str(seed) + '.png')
-sa.plotSpectComp(t, model, freqs, freqKnots, Ts, fmax, 'PSO Fit Spectrogram and Input Frequency Spline', dir + '\\PSO_spectC_' + str(seed) + '.png', vmax=0.18)
-sa.plotSpectComp(t, distSig-model, freqs, freqKnots, Ts, fmax, 'Filtered Signal and Input Frequency Spline', dir + '\\orig_spectC_' + str(seed) + '.png', vmax=0.18)
+Nseg = 16
+runs = 20
+model, lsf, isBadFit = pbf.PSOMultiSeg(tseg, yseg, Nseg, runs, lb0, ub0, subdiv = True)
+np.save(dir + '\\model.npy', model)
+
+sa.plotPSD(yseg-model, Ts, 'PSD of Filtered LIGO Data', dir+'finalPSD.png')

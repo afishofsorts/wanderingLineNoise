@@ -2,6 +2,10 @@ import numpy as np
 import random as rand
 from . import freqGen as fg
 
+#########################################################
+# FUNCTIONS TO GENERATE SIMUlATED WANDERING LINE SIGNAL #
+#########################################################
+
 # converts frequency to phase using rectangle approximation
 def freqToPhase(t, freqs, Ts):
     # INPUTS:
@@ -53,8 +57,8 @@ def genSignal(t, freqs, A: float, Ts: float, stnd = 0.4):
     distSig = addVar(cleanSig, stnd) # adds iid noise
     return cleanSig, distSig
 
-def genWL(f0, band, A, Ts, M = 10, stnd = 0.4):
-    freqKnots = fg.genKnot(M, f0, band) # knots for freq spline
+def genWL(f0, band, A, Ts, M = 10, n = 10, stnd = 0.4):
+    freqKnots = fg.genKnot(M + 2, f0, band, n) # knots for freq spline
     t, freqs = fg.genBSpline(freqKnots, Ts) # generates time and freq spline arrays
     cleanSig, distSig = genSignal(t, freqs, A, Ts, stnd) # generates signal with smoothly varying frequency and iid noise
     return t, cleanSig, distSig, freqs, freqKnots

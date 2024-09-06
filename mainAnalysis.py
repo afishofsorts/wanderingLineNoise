@@ -1,15 +1,25 @@
-import numpy as np
 from dsignal import sigAnalysis as sa
-from pso import psoAnalysis as pa
+import numpy as np
+import scipy.io
 
-dir = 'saved\\3898574613585262069'
-t, cleanSig, distSig = np.load(dir + '\\_data.npy')
-model = np.load(dir + '\\_model.npy')
+dir = 'saved\\ligodata\\'
+filename = 'H-H1_LOSC_2KHZ_V1-1126309888-4096_condat_10to210sec.mat'
+mat = scipy.io.loadmat(dir + filename)
 
-dif = distSig-model
+t = mat['dataX'][0]; y = mat['dataY'][:, 0]
 
-sa.plotPSD(dif, 1/900, 'Power Spectral Density of WL Signal minus PSO Fitting', dir + '\\dif_PSD.png')
-sa.plotPSD(distSig, 1/900, 'Power Spectral Density of Dummy Signal', dir + '\\dist_PSD.png')
-pa.plotDifHist(cleanSig, distSig, model, dir + '\\dif_hist.png')
-sa.plotSpectrogram(t, dif, 1/900, 90, dir + '\\final_spect.png', vmax=0.18)
+ind = np.where(t>40)[0][0]
 
+tseg = t[ind:] - t[ind]; yseg = y[ind:]
+Ts = tseg[1]-tseg[0]
+
+model = np.load(dir + '\\model.npy')
+
+print(model)
+print(yseg)
+dif = yseg-model
+print(dif)
+
+sa.plotPSD(model, Ts, 'PSD of Filtered LIGO Data', dir+'finalPSD.png')
+sa.plotSpectrogram(yseg, Ts, 1500, 1024, fmin=0)
+sa.plotSpectrogram(model, Ts, 1500, 1024, fmin=0)
